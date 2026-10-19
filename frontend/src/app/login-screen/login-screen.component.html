@@ -1,0 +1,37 @@
+<div class="login-screen">
+    <div class="form-container">
+        <input type="text" placeholder="Votre nom" [value]="player().name" (input)="updateUsername($event)"/>
+        <div class="color-section">
+            <h2>Votre couleur :</h2>
+            <div style="position: relative; display: inline-block;">
+                <mat-icon>colorize</mat-icon>
+                <input
+                    #colorInput
+                    type="color"
+                    [(ngModel)]="player().color"
+                    (change)="colorChange()"
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;"
+                />
+            </div>
+            <div class="color-badge" [style.--player-color]="player().color"></div>
+        </div>
+        <button [class]="_status()" (click)="connect()">
+            @if (_status() === '') {
+                @if (player().id) {
+                    <span>(Re)Join</span>
+                }
+                @else {
+                    <span>Join</span>
+                }
+            }
+            @else if (_status() === 'loading') {
+                <div></div>
+                <div></div>
+                <div></div>
+            }
+            @else {
+                <mat-icon>check</mat-icon>
+            }
+        </button>
+    </div>
+</div>

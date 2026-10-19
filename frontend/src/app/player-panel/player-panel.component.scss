@@ -1,0 +1,17 @@
+.player-panel {
+    height: 2rem;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 5px #bebebe;
+    background-color: var(--player-color);
+    text-shadow: 1px 1px 2px white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 800;
+
+    span {
+        mix-blend-mode: difference;
+    }
+}
