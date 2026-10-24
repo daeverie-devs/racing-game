@@ -6,7 +6,7 @@ import {environment} from '../../environments/environment';
 import {AvatarComponent} from '../avatar/avatar.component';
 import {skinColor} from '../avatar/skin';
 import {GameStore} from '../core/game.store';
-import {MoneyPipe, OddsPipe, youtubeEmbed} from '../core/format';
+import {MoneyPipe, OddsPipe, RecordPipe, youtubeEmbed} from '../core/format';
 import {Entry} from '../core/types';
 import {AwardCardComponent} from '../ui/award-card.component';
 import {ChatBubblesComponent} from '../ui/chat-bubbles.component';
@@ -21,7 +21,7 @@ import {ShamePopupComponent} from '../ui/shame-popup.component';
     selector: 'rg-screen',
     standalone: true,
     imports: [
-        MatIcon, QRCodeComponent, AvatarComponent, MoneyPipe, OddsPipe, AwardCardComponent, ChatBubblesComponent,
+        MatIcon, QRCodeComponent, AvatarComponent, MoneyPipe, OddsPipe, RecordPipe, AwardCardComponent, ChatBubblesComponent,
         CountdownComponent, EntryVisualComponent, LeaderboardComponent, PodiumComponent, ShamePopupComponent,
     ],
     templateUrl: 'screen.component.html',

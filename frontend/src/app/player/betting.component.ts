@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, computed, effect, inject, signal, un
 import {MatIcon} from '@angular/material/icon';
 import {AvatarComponent} from '../avatar/avatar.component';
 import {GameStore} from '../core/game.store';
-import {MoneyPipe, OddsPipe} from '../core/format';
+import {MoneyPipe, OddsPipe, RecordPipe} from '../core/format';
 import {CountdownComponent} from '../ui/countdown.component';
 import {EntryVisualComponent} from '../ui/entry-visual.component';
 
@@ -15,7 +15,7 @@ const STEPS = [1, 10, 100, 1000];
 @Component({
     selector: 'rg-betting',
     standalone: true,
-    imports: [MatIcon, AvatarComponent, MoneyPipe, OddsPipe, CountdownComponent, EntryVisualComponent],
+    imports: [MatIcon, AvatarComponent, MoneyPipe, OddsPipe, RecordPipe, CountdownComponent, EntryVisualComponent],
     templateUrl: 'betting.component.html',
     styleUrl: 'betting.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,

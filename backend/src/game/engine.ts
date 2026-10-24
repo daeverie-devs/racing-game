@@ -1,7 +1,7 @@
 import {randomBytes} from 'node:crypto';
 import {EventEmitter} from 'node:events';
 import {fn, col, Op} from 'sequelize';
-import {Award, Bet, cents, Game, Message, Player, Race, RaceEntry, Skin} from '../models';
+import {Award, Bet, cents, Game, Message, Player, Race, RaceEntry, Racer, Skin} from '../models';
 import {sequelize} from '../sequelize';
 import {
     CHAT_COOLDOWN_MS, CHAT_MAX, FINAL_RACE_MULTIPLIER, GameError, HOUSE_STAKE_PER_PLAYER, LOAN_MAX, LOAN_THRESHOLD,
@@ -228,18 +228,27 @@ export const forceReveal = async () => {
 
 // ---------- Race flow ----------
 
-/** Past wins and runs of each entry: racers across every game, players in this game's player races */
-const recordsOf = async (game: Game, entries: RaceEntry[]) => {
+/**
+ * Past wins and runs of each entry, as in a race program: racers across every game plus the history
+ * entered in the editor, players in this game's player races
+ */
+export const recordsOf = async (game: Game, entries: RaceEntry[]) => {
     const done = await Race.findAll({where: {winnerEntryId: {[Op.ne]: null}}, attributes: ['id', 'gameId', 'winnerEntryId']});
     const doneIds = done.map(r => r.id);
     const past = doneIds.length ? await RaceEntry.findAll({where: {raceId: {[Op.in]: doneIds}}}) : [];
     const winners = new Set(done.map(r => r.winnerEntryId));
     const sameGame = new Set(done.filter(r => r.gameId === game.id).map(r => r.id));
+    const racerIds = entries.map(e => e.racerId).filter((id): id is number => id !== null);
+    const history = racerIds.length ? await Racer.findAll({where: {id: {[Op.in]: racerIds}}, attributes: ['id', 'pastWins', 'pastRuns']}) : [];
     return entries.map(entry => {
+        const manual = history.find(h => h.id === entry.racerId);
         const runs = past.filter(p => entry.racerId !== null
             ? p.racerId === entry.racerId
             : p.playerId === entry.playerId && sameGame.has(p.raceId));
-        return {runs: runs.length, wins: runs.filter(p => winners.has(p.id)).length};
+        return {
+            runs: runs.length + (manual?.pastRuns ?? 0),
+            wins: runs.filter(p => winners.has(p.id)).length + (manual?.pastWins ?? 0),
+        };
     });
 };
 

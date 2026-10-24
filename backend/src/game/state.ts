@@ -1,7 +1,7 @@
 import {Op} from 'sequelize';
 import {Bet, Game, Message, Player, Race, RaceEntry, Racer} from '../models';
 import {racerImageUrl} from './editor';
-import {getActiveGame, getRaces} from './engine';
+import {getActiveGame, getRaces, recordsOf} from './engine';
 import {
     FINAL_RACE_MULTIPLIER, LOAN_MAX, LOAN_THRESHOLD, MIN_BET_SHARE, MIN_RETURN, minBet, oddsOf, PAYOUT_CAP, rankPlayers, score
 } from './rules';
@@ -62,11 +62,17 @@ export const buildPublicState = async (connectedPlayerIds: Set<number>) => {
                 connected: connectedPlayerIds.has(p.id),
             };
         }),
-        race: race ? await buildRace(race, bets, players, revealed, game.status === 'results') : null,
+        race: race ? await buildRace(game, race, bets, players, revealed, game.status === 'results') : null,
     };
 };
 
-const buildRace = async (race: Race, bets: Bet[], players: Player[], revealed: boolean, finished: boolean) => {
+/** Each entry with its record (a finished race counts in it once its winner is declared) */
+const withRecords = async (game: Game, entries: RaceEntry[]) => {
+    const records = await recordsOf(game, entries);
+    return entries.map((entry, i) => ({entry, record: records[i]}));
+};
+
+const buildRace = async (game: Game, race: Race, bets: Bet[], players: Player[], revealed: boolean, finished: boolean) => {
     const entries = await RaceEntry.findAll({where: {raceId: race.id}, order: [['position', 'ASC'], ['id', 'ASC']]});
     const racerIds = entries.map(e => e.racerId).filter((id): id is number => id !== null);
     const racers = racerIds.length
@@ -83,7 +89,7 @@ const buildRace = async (race: Race, bets: Bet[], players: Player[], revealed: b
         link: race.link,
         pot: revealed ? pot : null,
         winnerEntryId: finished ? race.winnerEntryId : null,
-        entries: entries.map(e => {
+        entries: (await withRecords(game, entries)).map(({entry: e, record}) => {
             const racer = racers.find(r => r.id === e.racerId);
             const player = players.find(p => p.id === e.playerId);
             const entryBets = bets.filter(b => b.entryId === e.id && b.amount > 0);
@@ -97,6 +103,8 @@ const buildRace = async (race: Race, bets: Bet[], players: Player[], revealed: b
                 seed: e.seed,
                 // The morning line, shown from the start: the house's and the pool's money only
                 startOdds: oddsOf(house, e.house + e.seed),
+                // The race program's past performances: wins and races so far
+                record,
                 total: revealed ? total : null,
                 odds: revealed ? oddsOf(pot, total + e.house + e.seed) : null,
                 bettors: revealed

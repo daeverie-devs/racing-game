@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, HostListener, computed, inject, outp
 import {FormsModule} from '@angular/forms';
 import {MatIcon} from '@angular/material/icon';
 import {GameStore} from '../core/game.store';
-import {MoneyPipe} from '../core/format';
+import {MoneyPipe, RecordPipe} from '../core/format';
 import {EditorData, EditorGame, EditorRace, RaceType} from '../core/types';
 import {imageFromTransfer, resizeImage} from './image';
 
@@ -13,6 +13,9 @@ interface RacerForm {
     name: string;
     image: string | null;
     preview: string | null;
+    /** Races run before the app, shown in the racer's record */
+    pastWins: number;
+    pastRuns: number;
 }
 
 interface RaceForm {
@@ -36,7 +39,7 @@ interface GameForm {
 @Component({
     selector: 'rg-editor',
     standalone: true,
-    imports: [FormsModule, MatIcon, MoneyPipe],
+    imports: [FormsModule, MatIcon, MoneyPipe, RecordPipe],
     templateUrl: 'editor.component.html',
     styleUrl: 'editor.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -184,12 +187,15 @@ export class EditorComponent {
     // ---------- Racers ----------
 
     newRacer() {
-        this.racerForm.set({id: null, name: '', image: null, preview: null});
+        this.racerForm.set({id: null, name: '', image: null, preview: null, pastWins: 0, pastRuns: 0});
     }
 
     editRacer(id: number) {
         const racer = this.racersById().get(id);
-        if (racer) this.racerForm.set({id: racer.id, name: racer.name, image: null, preview: racer.imageUrl});
+        if (racer) {
+            const {id, name, imageUrl, pastWins, pastRuns} = racer;
+            this.racerForm.set({id, name, image: null, preview: imageUrl, pastWins, pastRuns});
+        }
     }
 
     async useImage(file: Blob | null | undefined) {
@@ -236,12 +242,13 @@ export class EditorComponent {
     async saveRacer(addAnother = false) {
         const form = this.racerForm();
         if (!form) return;
-        const saved = await this.save('racer.save', {id: form.id, name: form.name, image: form.image});
+        const {id, name, image, pastWins, pastRuns} = form;
+        const saved = await this.save('racer.save', {id, name, image, pastWins, pastRuns});
         if (!saved) return;
         // Created from the race form: the new racer joins that race
         const race = this.raceForm();
         if (!form.id && saved.id && race && !race.racerIds.includes(saved.id)) this.toggleRaceRacer(saved.id);
-        this.racerForm.set(addAnother ? {id: null, name: '', image: null, preview: null} : null);
+        this.racerForm.set(addAnother ? {id: null, name: '', image: null, preview: null, pastWins: 0, pastRuns: 0} : null);
     }
 
     deleteRacer(id: number) {

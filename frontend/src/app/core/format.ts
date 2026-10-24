@@ -29,6 +29,21 @@ export class OddsPipe implements PipeTransform {
     }
 }
 
+/** "2 victoires en 5 courses", or "Première course" */
+export const formatRecord = (record: {wins: number, runs: number} | null | undefined) => {
+    if (!record || record.runs === 0) return 'Première course';
+    // French: 0 and 1 take the singular
+    const wins = `${record.wins} victoire${record.wins > 1 ? 's' : ''}`;
+    return `${wins} en ${record.runs} course${record.runs > 1 ? 's' : ''}`;
+};
+
+@Pipe({name: 'record', standalone: true})
+export class RecordPipe implements PipeTransform {
+    transform(record: {wins: number, runs: number} | null | undefined) {
+        return formatRecord(record);
+    }
+}
+
 /** 1er, 2e, 3e... */
 export const ordinal = (rank: number) => rank === 1 ? '1er' : `${rank}e`;
 

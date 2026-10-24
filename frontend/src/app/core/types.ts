@@ -78,6 +78,8 @@ export interface Entry {
     seed: number;
     /** Morning line: odds from the house and pool money alone, shown from the start */
     startOdds: number | null;
+    /** Past performances: wins and races so far (editor history included) */
+    record: {wins: number, runs: number};
     total: number | null;
     odds: number | null;
     bettors: Bettor[];
@@ -124,6 +126,9 @@ export interface EditorRacer {
     id: number;
     name: string;
     imageUrl: string | null;
+    /** History entered by hand: races run before the app */
+    pastWins: number;
+    pastRuns: number;
 }
 
 export interface EditorRace {

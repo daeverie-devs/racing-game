@@ -86,6 +86,9 @@
                                 <img [src]="racer.imageUrl" [alt]="racer.name" />
                             }
                             <span class="racer-name">{{ racer.name }}</span>
+                            @if (racer.pastRuns) {
+                                <span class="rg-muted racer-history">{{ {wins: racer.pastWins, runs: racer.pastRuns} | record }} avant l'app</span>
+                            }
                             <div class="racer-actions">
                                 <button class="rg-icon-btn" (click)="editRacer(racer.id)" aria-label="Modifier"><mat-icon>edit</mat-icon></button>
                                 <button class="rg-icon-btn" (click)="deleteRacer(racer.id)" aria-label="Supprimer"><mat-icon>delete</mat-icon></button>
@@ -205,6 +208,22 @@
         <label class="rg-label" for="racer-name">Nom</label>
         <input id="racer-name" class="rg-field" name="name" maxlength="80" placeholder="Ex.: Bille rouge"
                [ngModel]="form.name" (ngModelChange)="patchRacer({name: $event})" />
+
+        <span class="rg-label">Historique avant l'app (optionnel)</span>
+        <div class="history">
+            <label>
+                <input class="rg-field" type="number" name="pastWins" min="0" [max]="form.pastRuns"
+                       [ngModel]="form.pastWins" (ngModelChange)="patchRacer({pastWins: +$event || 0})" />
+                <span>victoires</span>
+            </label>
+            <span class="rg-muted">en</span>
+            <label>
+                <input class="rg-field" type="number" name="pastRuns" min="0"
+                       [ngModel]="form.pastRuns" (ngModelChange)="patchRacer({pastRuns: +$event || 0})" />
+                <span>courses</span>
+            </label>
+        </div>
+        <span class="rg-muted hint">Compte dans sa fiche et dans sa cote de départ, en plus des courses jouées dans l'app.</span>
 
         <div class="modal-actions">
             <button type="button" class="rg-btn rg-btn--ghost" (click)="racerForm.set(null)">Annuler</button>

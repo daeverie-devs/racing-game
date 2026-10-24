@@ -41,6 +41,7 @@
         <rg-entry-visual [entry]="entry" size="132px" />
         <h2 class="rg-title">{{ entry.name }}</h2>
         <span class="rg-chip rg-chip--accent">Cote de départ {{ entry.startOdds | odds }}</span>
+        <span class="record">{{ entry.record | record }}</span>
     </section>
 
     <section class="stake rg-card">
@@ -78,6 +79,7 @@
                     <rg-entry-visual [entry]="entry" size="84px" />
                     <span class="name">{{ entry.name }}</span>
                     <span class="start-odds">{{ entry.startOdds | odds }}</span>
+                    <span class="record">{{ entry.record | record }}</span>
                 </button>
             }
         </div>

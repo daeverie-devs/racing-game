@@ -29,13 +29,13 @@ const requireEditable = async (race: Race) => {
 };
 
 export const loadEditor = async () => {
-    const racers = await Racer.findAll({attributes: ['id', 'name', 'imageType', 'imageVersion'], order: [['name', 'ASC']]});
+    const racers = await Racer.findAll({attributes: ['id', 'name', 'imageType', 'imageVersion', 'pastWins', 'pastRuns'], order: [['name', 'ASC']]});
     const games = await Game.findAll({order: [['id', 'ASC']]});
     const races = await Race.findAll({order: [['position', 'ASC'], ['id', 'ASC']]});
     const entries = await RaceEntry.findAll({where: {racerId: {[Op.ne]: null}}, order: [['position', 'ASC'], ['id', 'ASC']]});
 
     return {
-        racers: racers.map(r => ({id: r.id, name: r.name, imageUrl: racerImageUrl(r)})),
+        racers: racers.map(r => ({id: r.id, name: r.name, imageUrl: racerImageUrl(r), pastWins: r.pastWins, pastRuns: r.pastRuns})),
         games: games.map(g => ({
             id: g.id,
             name: g.name,
@@ -66,17 +66,20 @@ const parseImage = (dataUrl: unknown) => {
     return {image: buffer, imageType: match[1]};
 };
 
-export const saveRacer = async (data: {id?: unknown, name?: unknown, image?: unknown}) => {
+export const saveRacer = async (data: {id?: unknown, name?: unknown, image?: unknown, pastWins?: unknown, pastRuns?: unknown}) => {
     const name = text(data.name, 80, 'Nom');
     const image = data.image ? parseImage(data.image) : null;
+    // Races run before the app: wins can't exceed races
+    const pastRuns = intIn(data.pastRuns, 0, 999, 0);
+    const pastWins = Math.min(intIn(data.pastWins, 0, 999, 0), pastRuns);
     if (data.id) {
         const racer = await Racer.findByPk(Number(data.id));
         if (!racer) throw new GameError('Coureur introuvable');
-        await racer.update(image ? {name, ...image, imageVersion: racer.imageVersion + 1} : {name});
+        await racer.update(image ? {name, pastWins, pastRuns, ...image, imageVersion: racer.imageVersion + 1} : {name, pastWins, pastRuns});
         return racer.id;
     }
     if (!image) throw new GameError('Ajoute une image');
-    return (await Racer.create({name, ...image})).id;
+    return (await Racer.create({name, pastWins, pastRuns, ...image})).id;
 };
 
 export const deleteRacer = async (id: unknown) => {

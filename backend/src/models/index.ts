@@ -20,6 +20,9 @@ export class Racer extends Model<InferAttributes<Racer>, InferCreationAttributes
     declare imageType: string | null;
     // Bumped on every image change so browsers can cache /api/racers/:id/image forever
     declare imageVersion: CreationOptional<number>;
+    // History entered by hand in the editor (races run before the app), added to the app's own record
+    declare pastWins: CreationOptional<number>;
+    declare pastRuns: CreationOptional<number>;
 }
 
 export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<Game>> {
@@ -121,6 +124,8 @@ Racer.init({
     image: {type: DataTypes.BLOB('medium'), allowNull: true},
     imageType: {type: DataTypes.STRING(40), allowNull: true},
     imageVersion: {type: DataTypes.INTEGER, allowNull: false, defaultValue: 1},
+    pastWins: {type: DataTypes.INTEGER, allowNull: false, defaultValue: 0},
+    pastRuns: {type: DataTypes.INTEGER, allowNull: false, defaultValue: 0},
 }, {sequelize, tableName: 'racer', timestamps: false});
 
 Game.init({

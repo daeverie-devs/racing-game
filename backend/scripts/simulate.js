@@ -94,7 +94,11 @@ const main = async () => {
     await admin.ok('game.activate', {id: game.id});
     await admin.ok('game.reset', {});
     const racerIds = [];
-    for (const name of ['Bolt', 'Flash', 'Turbo', 'Escargot']) racerIds.push((await admin.ok('racer.save', {name, image: PIXEL})).id);
+    // Bolt comes with a history entered by hand: 3 wins in 5 races before the app
+    for (const name of ['Bolt', 'Flash', 'Turbo', 'Escargot']) {
+        const history = name === 'Bolt' ? {pastWins: 3, pastRuns: 5} : {};
+        racerIds.push((await admin.ok('racer.save', {name, image: PIXEL, ...history})).id);
+    }
     await admin.ok('race.save', {gameId: game.id, name: 'Course 1', type: 'racers', link: 'https://youtu.be/abc?t=30', racerIds, presetWinnerRacerId: racerIds[1]});
     await admin.ok('race.save', {gameId: game.id, name: 'Course des joueurs', type: 'players'});
     await admin.ok('race.save', {gameId: game.id, name: 'Course 3', type: 'racers', racerIds: racerIds.slice(0, 3), presetWinnerRacerId: racerIds[2]});
@@ -136,6 +140,9 @@ const main = async () => {
     const tooLittle = await phones[0].req('bet.lock', {entryId: entries1[0].id, amount: 10});
     check(!tooLittle.ok && phones[0].state.me.minBet === 250, `bet under 5 % refused (${tooLittle.error})`);
     // Morning line: every racer shows starting odds within the track limits before anyone bets
+    const bolt = entries1.find(e => e.name === 'Bolt');
+    check(bolt?.record.wins === 3 && bolt.record.runs === 5 && entries1.filter(e => e !== bolt).every(e => e.record.runs === 0),
+        `race 1: records shown, hand-entered history included (${JSON.stringify(entries1.map(e => e.record))})`);
     check(entries1.every(e => e.startOdds >= 2.6 - 0.01 && e.startOdds <= 31 + 0.01),
         `race 1: starting odds shown, within 2.6× to 31× (${entries1.map(e => e.startOdds.toFixed(1)).join(', ')})`);
 
@@ -204,6 +211,10 @@ const main = async () => {
     await admin.ok('game.next');
     state = await waitFor(admin, s => s.game.status === 'betting' && s.game.raceIndex === 2, 'race 3 betting');
     const entries3 = state.race.entries;
+    // Flash won race 1, Bolt ran it: both records count it
+    const flash3 = entries3.find(e => e.name === 'Flash'), bolt3 = entries3.find(e => e.name === 'Bolt');
+    check(flash3?.record.wins === 1 && flash3.record.runs === 1 && bolt3?.record.runs === 6 && bolt3.record.wins === 3,
+        `race 3: records grow with each race (Flash ${JSON.stringify(flash3?.record)}, Bolt ${JSON.stringify(bolt3?.record)})`);
     await Promise.all(phones.map(p => p.ok('bet.lock', {entryId: entries3[0].id, amount: p.state.me.minBet})));
     state = await waitFor(admin, s => s.game.status === 'watching', 'race 3 reveal');
     await admin.ok('race.winner', {entryId: entries3[2].id});
