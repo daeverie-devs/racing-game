@@ -1,0 +1,134 @@
+:host {
+    display: block;
+    --row-gap: 0.4rem;
+    --col-gap: 1rem;
+}
+
+.board {
+    display: flex;
+    flex-direction: column;
+    gap: var(--row-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 48px;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--rg-radius-inner);
+    background: var(--rg-surface-inset);
+    border: 1px solid transparent;
+    transition: opacity var(--rg-slow) var(--rg-ease), filter var(--rg-slow);
+
+    &.animate {
+        // Starts at its old place and slides to the new one
+        animation: slide 1.1s var(--rg-ease) both;
+        animation-delay: calc(400ms + var(--i) * 30ms);
+    }
+
+    &.me {
+        border-color: var(--rg-accent);
+        background: var(--rg-accent-soft);
+    }
+
+    &.first .rank { color: var(--rg-gold); }
+    &.second .rank { color: var(--rg-silver); }
+    &.third .rank { color: var(--rg-bronze); }
+
+    &.hidden {
+        opacity: 0.35;
+        filter: blur(3px);
+    }
+}
+
+@keyframes slide {
+    from {
+        transform: translate(
+            calc(var(--from-col) * (100% + var(--col-gap))),
+            calc(var(--from-row) * (100% + var(--row-gap)))
+        );
+    }
+    to { transform: translate(0, 0); }
+}
+
+.rank {
+    display: flex;
+    flex-direction: column;
+    width: 2.6rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+    color: var(--rg-text-muted);
+}
+
+.name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.move {
+    font-size: 0.72rem;
+    font-weight: 800;
+    animation: rg-pop var(--rg-medium) var(--rg-ease-pop) both;
+    animation-delay: 1.4s;
+
+    &.up { color: var(--rg-gain); }
+    &.down { color: var(--rg-loss); }
+}
+
+.money {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+    text-align: right;
+}
+
+.delta {
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+// Long lists on the big screen: two columns, read top to bottom then the next column
+:host(.columns) .board {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(var(--rows), auto);
+    column-gap: var(--col-gap);
+}
+
+:host(.large) {
+    --row-gap: 0.55rem;
+
+    .row {
+        min-height: 60px;
+        padding: 0.45rem 1.1rem;
+        font-size: 1.35rem;
+    }
+
+    .rank { width: 3.5rem; }
+    .move { font-size: 0.9rem; }
+    .delta { font-size: 1rem; }
+}
+
+:host(.large.columns) {
+    .row {
+        min-height: 64px;
+        padding: 0.35rem 0.9rem;
+        font-size: 1.25rem;
+    }
+
+    .rank { width: 2.8rem; }
+    .move { font-size: 0.8rem; }
+    .delta { font-size: 0.85rem; }
+}

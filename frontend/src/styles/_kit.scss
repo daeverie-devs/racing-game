@@ -1,0 +1,243 @@
+// Global building blocks (.rg-*). Use them in templates instead of restyling buttons and panels.
+
+@mixin hover {
+    @media (hover: hover) and (pointer: fine) {
+        &:hover { @content; }
+    }
+}
+
+@mixin focus-ring {
+    &:focus-visible {
+        outline: none;
+        box-shadow: var(--rg-focus);
+    }
+}
+
+// ---------- Panels ----------
+.rg-card {
+    background: var(--rg-surface);
+    border: 1px solid var(--rg-border);
+    border-radius: var(--rg-radius);
+    box-shadow: var(--rg-shadow);
+    backdrop-filter: var(--rg-backdrop);
+    -webkit-backdrop-filter: var(--rg-backdrop);
+    padding: 1rem;
+}
+
+.rg-inset {
+    background: var(--rg-surface-inset);
+    border-radius: var(--rg-radius-inner);
+}
+
+.rg-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rg-text-muted);
+}
+
+.rg-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.rg-muted {
+    color: var(--rg-text-muted);
+}
+
+.rg-money {
+    color: var(--rg-money);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.rg-gain { color: var(--rg-gain); }
+.rg-loss { color: var(--rg-loss); }
+
+// ---------- Buttons ----------
+.rg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: var(--rg-touch);
+    padding: 0 1.25rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--rg-accent-strong);
+    color: var(--rg-accent-contrast);
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: transform var(--rg-fast) var(--rg-ease), filter var(--rg-fast), background-color var(--rg-fast), opacity var(--rg-fast);
+
+    mat-icon {
+        width: 20px;
+        height: 20px;
+        font-size: 20px;
+    }
+
+    @include hover { filter: brightness(1.1); }
+    &:active { transform: scale(0.96); }
+    &:disabled {
+        opacity: 0.4;
+        cursor: default;
+        transform: none;
+        filter: none;
+    }
+    @include focus-ring;
+
+    &--ghost {
+        background: var(--rg-surface-inset);
+        color: var(--rg-text);
+        @include hover { background: var(--rg-accent-soft); filter: none; }
+    }
+
+    &--money {
+        background: var(--rg-money);
+        color: #1c1917;
+    }
+
+    &--danger {
+        background: var(--rg-loss-soft);
+        color: var(--rg-loss);
+    }
+
+    &--block {
+        width: 100%;
+    }
+
+    &--large {
+        min-height: 60px;
+        padding: 0 1.75rem;
+        font-size: 1.1rem;
+    }
+}
+
+.rg-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: var(--rg-touch);
+    height: var(--rg-touch);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--rg-text-muted);
+    cursor: pointer;
+    transition: background-color var(--rg-fast), color var(--rg-fast), transform var(--rg-fast) var(--rg-ease);
+
+    @include hover { background: var(--rg-accent-soft); color: var(--rg-text); }
+    &:active { transform: scale(0.92); }
+    &:disabled { opacity: 0.35; cursor: default; }
+    @include focus-ring;
+}
+
+// ---------- Fields ----------
+.rg-field {
+    width: 100%;
+    min-height: var(--rg-touch);
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--rg-border);
+    border-radius: var(--rg-radius-inner);
+    background: var(--rg-surface-inset);
+    // 16px so phones don't zoom on focus
+    font-size: 16px;
+    transition: border-color var(--rg-fast), box-shadow var(--rg-fast);
+
+    &::placeholder { color: var(--rg-text-subtle); }
+    &:focus {
+        outline: none;
+        border-color: var(--rg-accent);
+        box-shadow: var(--rg-focus);
+    }
+}
+
+select.rg-field {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--rg-text-muted) 50%), linear-gradient(135deg, var(--rg-text-muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 2.2rem;
+
+    option { background: var(--rg-bg); }
+}
+
+.rg-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    @extend .rg-eyebrow;
+}
+
+// ---------- Chips and badges ----------
+.rg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    background: var(--rg-surface-inset);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    mat-icon {
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+    }
+
+    &--money { background: var(--rg-money-soft); color: var(--rg-money); }
+    &--gain { background: var(--rg-gain-soft); color: var(--rg-gain); }
+    &--loss { background: var(--rg-loss-soft); color: var(--rg-loss); }
+    &--accent { background: var(--rg-accent-soft); color: var(--rg-accent); }
+}
+
+// ---------- Segmented control ----------
+.rg-segmented {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--rg-surface-inset);
+    border-radius: var(--rg-radius-inner);
+
+    button {
+        flex: 1;
+        min-height: 40px;
+        border: 0;
+        border-radius: calc(var(--rg-radius-inner) - 4px);
+        background: transparent;
+        color: var(--rg-text-muted);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color var(--rg-fast), color var(--rg-fast);
+
+        &[aria-pressed='true'] {
+            background: var(--rg-accent-strong);
+            color: var(--rg-accent-contrast);
+        }
+    }
+}
+
+// ---------- Toast ----------
+.rg-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    z-index: 100;
+    max-width: calc(100vw - 2rem);
+    padding: 0.75rem 1.1rem;
+    border-radius: 999px;
+    background: var(--rg-surface-strong);
+    border: 1px solid var(--rg-border);
+    box-shadow: var(--rg-shadow-raised);
+    font-weight: 600;
+    transform: translateX(-50%);
+    animation: rg-rise var(--rg-medium) var(--rg-ease);
+}

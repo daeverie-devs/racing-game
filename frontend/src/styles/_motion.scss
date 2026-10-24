@@ -1,0 +1,48 @@
+// The few animations the app uses, shared so every screen moves the same way.
+// Everything respects prefers-reduced-motion.
+
+@keyframes rg-rise {
+    from { opacity: 0; transform: translate(var(--rg-tx, 0), 12px); }
+    to { opacity: 1; transform: translate(var(--rg-tx, 0), 0); }
+}
+
+@keyframes rg-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes rg-pop {
+    0% { opacity: 0; transform: scale(0.6); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes rg-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+@keyframes rg-float-up {
+    0% { opacity: 0; transform: translateY(0) scale(0.9); }
+    10% { opacity: 1; transform: translateY(-4vh) scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-70vh) scale(1); }
+}
+
+.rg-enter { animation: rg-rise var(--rg-medium) var(--rg-ease) both; }
+.rg-enter-pop { animation: rg-pop var(--rg-medium) var(--rg-ease-pop) both; }
+.rg-fade-in { animation: rg-fade var(--rg-medium) var(--rg-ease) both; }
+.rg-pulse { animation: rg-pulse 1.6s ease-in-out infinite; }
+
+// Staggered lists: set --i on each child
+.rg-stagger > * {
+    animation: rg-rise var(--rg-medium) var(--rg-ease) both;
+    animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: 1ms !important;
+    }
+}

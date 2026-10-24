@@ -1,0 +1,141 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rg-gap);
+}
+
+.countdown {
+    display: block;
+    padding: 0 0.25rem;
+}
+
+.big {
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.small {
+    font-size: 0.85rem;
+}
+
+// ---------- Pick a racer ----------
+.pick-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.pass {
+    min-height: 38px;
+    padding: 0 1rem;
+    font-size: 0.85rem;
+}
+
+.entries {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+}
+
+.entry {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem 0.85rem;
+    cursor: pointer;
+    transition: transform var(--rg-fast) var(--rg-ease), border-color var(--rg-fast);
+
+    &:active { transform: scale(0.96); }
+}
+
+.name {
+    font-weight: 800;
+    text-align: center;
+}
+
+.seed {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+}
+
+// ---------- Selected racer ----------
+.selected {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+.back {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.stake {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.amount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+
+    .rg-btn {
+        padding: 0;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+}
+
+// ---------- Locked ----------
+.locked {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.lock-icon {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    color: var(--rg-gain);
+}
+
+.waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.faces {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+}

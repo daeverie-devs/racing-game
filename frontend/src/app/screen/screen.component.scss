@@ -1,0 +1,379 @@
+:host {
+    display: block;
+    height: 100%;
+}
+
+.screen {
+    height: 100%;
+    padding: 2rem 2.5rem 7rem;
+    overflow: hidden;
+}
+
+.headline {
+    font-size: clamp(2rem, 3.6vw, 3.6rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+}
+
+.name, .entry-name {
+    overflow: hidden;
+    font-weight: 800;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    height: 100%;
+    text-align: center;
+}
+
+.lead {
+    font-size: 1.5rem;
+}
+
+// ---------- Lobby ----------
+.lobby {
+    display: grid;
+    grid-template-columns: minmax(340px, 0.8fr) 2fr;
+    gap: 2rem;
+    height: 100%;
+}
+
+.join {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.qr {
+    padding: 10px;
+    border-radius: var(--rg-radius);
+    background: #fff;
+}
+
+.url {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--rg-accent);
+}
+
+.warning {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 22rem;
+    padding: 0.75rem;
+    border-radius: var(--rg-radius-inner);
+    background: var(--rg-loss-soft);
+    color: var(--rg-loss);
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.crowd {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0;
+}
+
+.crowd-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    justify-content: center;
+    gap: 1.25rem;
+    overflow: hidden;
+}
+
+.crowd-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    width: 120px;
+
+    .name {
+        max-width: 100%;
+        font-size: 1.1rem;
+    }
+}
+
+.empty {
+    margin-top: 20vh;
+    font-size: 1.6rem;
+}
+
+// ---------- Betting ----------
+.race {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: 100%;
+}
+
+.race-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.countdown {
+    width: min(40vw, 520px);
+    --countdown-size: 4rem;
+}
+
+.entries {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    align-content: center;
+    gap: 1.25rem;
+}
+
+.entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+
+    .entry-name {
+        max-width: 100%;
+        font-size: 1.6rem;
+    }
+}
+
+.ready {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.85rem 1.25rem;
+}
+
+.ready-count {
+    font-size: 1.4rem;
+    white-space: nowrap;
+
+    strong { font-size: 2rem; }
+}
+
+.ready-faces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.ready-player {
+    position: relative;
+
+    .lock {
+        position: absolute;
+        right: -6px;
+        bottom: -4px;
+        width: 22px;
+        height: 22px;
+        padding: 2px;
+        border-radius: 50%;
+        background: var(--rg-gain);
+        color: #052e16;
+        font-size: 18px;
+    }
+}
+
+// ---------- Watching ----------
+.watching {
+    display: grid;
+    grid-template-columns: 1fr minmax(360px, 30vw);
+    gap: 1.5rem;
+    height: 100%;
+}
+
+.video {
+    padding: 0;
+    overflow: hidden;
+
+    iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+}
+
+.no-video {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    height: 100%;
+    font-size: 2rem;
+    font-weight: 800;
+
+    mat-icon {
+        width: 96px;
+        height: 96px;
+        font-size: 96px;
+        color: var(--rg-accent);
+    }
+}
+
+.odds {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0.85rem 1.1rem;
+}
+
+.pot-value {
+    font-size: 2rem;
+}
+
+.odds-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1rem;
+}
+
+.odds-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.odds-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    .entry-name { font-size: 1.2rem; }
+}
+
+.odds-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--rg-accent);
+}
+
+.bar {
+    display: flex;
+    height: 12px;
+    border-radius: 999px;
+    background: var(--rg-surface-inset);
+    overflow: hidden;
+}
+
+.segment {
+    flex-basis: 0;
+    transform-origin: left;
+    animation: grow var(--rg-slow) var(--rg-ease) both;
+    animation-delay: 300ms;
+
+    &.empty {
+        background: transparent;
+        animation: none;
+    }
+}
+
+@keyframes grow {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.bettors {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem;
+
+    .total {
+        margin-left: auto;
+    }
+}
+
+// ---------- Results ----------
+.results {
+    display: grid;
+    grid-template-columns: minmax(320px, 0.9fr) 1.4fr;
+    gap: 2rem;
+    height: 100%;
+}
+
+.winner-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    overflow: hidden;
+    text-align: center;
+}
+
+.payouts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.75rem;
+    overflow: hidden;
+}
+
+.payout {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--rg-radius-inner);
+    background: var(--rg-surface-inset);
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    .payout-name {
+        flex: 1;
+        overflow: hidden;
+        text-align: left;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}
+
+.board {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+// ---------- Podium ----------
+.podium {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1100px;
+    height: 100%;
+    margin: 0 auto;
+    overflow: hidden;
+    text-align: center;
+}

@@ -1,0 +1,37 @@
+<div class="stage">
+    @for (place of places(); track place.rank) {
+        <div class="place" [class]="'rank-' + place.rank">
+            <div class="who">
+                @if (place.revealed) {
+                    @for (player of place.players; track player.id) {
+                        <div class="winner" [class.me]="player.id === highlightId()">
+                            <rg-avatar [skin]="player.skin" [size]="large() ? (place.rank === 1 ? '130px' : '96px') : (place.rank === 1 ? '72px' : '56px')" />
+                            <span class="name">{{ player.name }}</span>
+                            <span class="rg-money">{{ player.score | money }}</span>
+                        </div>
+                    } @empty {
+                        <span class="nobody rg-muted">—</span>
+                    }
+                } @else {
+                    <span class="mystery">?</span>
+                }
+            </div>
+            <div class="block">{{ place.rank }}</div>
+        </div>
+    }
+</div>
+
+@if (step() >= 3) {
+    <div class="confetti" aria-hidden="true">
+        @for (i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]; track i) {
+            <span [style.--i]="i"></span>
+        }
+    </div>
+}
+
+@if (rest().length) {
+    <div class="rest">
+        <span class="rg-eyebrow">Les autres</span>
+        <rg-leaderboard [players]="rest()" [columnCount]="restColumns()" [highlightId]="highlightId()" />
+    </div>
+}

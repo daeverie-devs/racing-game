@@ -1,0 +1,113 @@
+:host {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.stage {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.place {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.who {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.5rem;
+    min-height: 110px;
+}
+
+.winner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    text-align: center;
+    animation: rg-pop var(--rg-slow) var(--rg-ease-pop) both;
+
+    &.me .name { color: var(--rg-accent); }
+}
+
+.name {
+    max-width: 10rem;
+    overflow: hidden;
+    font-weight: 800;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mystery {
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--rg-text-subtle);
+    animation: rg-pulse 1.6s ease-in-out infinite;
+}
+
+.block {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    border-radius: var(--rg-radius-inner) var(--rg-radius-inner) 0 0;
+    font-size: 2rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.rank-1 .block { height: 130px; background: linear-gradient(var(--rg-gold), #d97706); }
+.rank-2 .block { height: 95px; background: linear-gradient(var(--rg-silver), #64748b); }
+.rank-3 .block { height: 70px; background: linear-gradient(var(--rg-bronze), #b45309); }
+
+.rest {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    animation: rg-rise var(--rg-medium) var(--rg-ease) both;
+}
+
+.confetti {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    overflow: hidden;
+
+    span {
+        position: absolute;
+        top: -5vh;
+        left: calc(var(--i) * 4.2%);
+        width: 10px;
+        height: 16px;
+        border-radius: 2px;
+        background: hsl(calc(var(--i) * 47deg) 90% 60%);
+        animation: fall 3.2s linear both;
+        animation-delay: calc(var(--i) * 70ms);
+    }
+}
+
+@keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); }
+}
+
+:host(.large) {
+    gap: 1rem;
+
+    .who { min-height: 180px; }
+    .name { max-width: 16rem; font-size: 1.5rem; }
+    .rg-money { font-size: 1.2rem; }
+    .block { font-size: 3rem; }
+    .rank-1 .block { height: 150px; }
+    .rank-2 .block { height: 110px; }
+    .rank-3 .block { height: 80px; }
+    .mystery { font-size: 5rem; }
+}

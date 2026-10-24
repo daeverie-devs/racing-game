@@ -1,0 +1,35 @@
+<ol class="board">
+    @for (row of rows(); track row.player.id; let i = $index) {
+        <li class="row"
+            [class.me]="row.player.id === highlightId()"
+            [class.hidden]="row.hidden"
+            [class.first]="row.player.rank === 1"
+            [class.second]="row.player.rank === 2"
+            [class.third]="row.player.rank === 3"
+            [class.animate]="animate()"
+            [style.--from-row]="row.fromRow"
+            [style.--from-col]="row.fromCol"
+            [style.--i]="i">
+            <span class="rank">
+                {{ row.hidden ? '?' : (row.player.rank | ordinal) }}
+                @if (showDelta() && !row.hidden) {
+                    @if (row.moved > 0) {
+                        <span class="move up">▲{{ row.moved }}</span>
+                    } @else if (row.moved < 0) {
+                        <span class="move down">▼{{ -row.moved }}</span>
+                    }
+                }
+            </span>
+            <rg-avatar [skin]="row.player.skin" [size]="large() ? '48px' : '36px'" [dimmed]="!row.player.connected" />
+            <span class="name">{{ row.hidden ? '???' : row.player.name }}</span>
+            <span class="money">
+                <span class="score rg-money">{{ row.hidden ? '' : (row.player.score | money) }}</span>
+                @if (showDelta() && !row.hidden && row.player.lastDelta) {
+                    <span class="delta" [class.rg-gain]="row.player.lastDelta > 0" [class.rg-loss]="row.player.lastDelta < 0">
+                        {{ row.player.lastDelta | money:true }}
+                    </span>
+                }
+            </span>
+        </li>
+    }
+</ol>

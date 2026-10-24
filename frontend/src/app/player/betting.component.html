@@ -1,0 +1,79 @@
+@if (store.game()?.lockDeadline) {
+    <rg-countdown class="countdown" [deadline]="store.game()!.lockDeadline" [total]="store.game()!.countdownSeconds" />
+}
+
+@if (locked()) {
+    <section class="locked rg-card rg-enter-pop">
+        <mat-icon class="lock-icon">lock</mat-icon>
+        @if (lockedEntry(); as entry) {
+            <span class="rg-eyebrow">Mise verrouillée</span>
+            <rg-entry-visual [entry]="entry" size="96px" />
+            <h2 class="rg-title">{{ entry.name }}</h2>
+            <span class="big rg-money">{{ bet()!.amount | money }}</span>
+        } @else {
+            <span class="rg-eyebrow">Tu passes ce tour</span>
+            <p class="rg-muted">Prudent. Ou peureux.</p>
+        }
+        <button class="rg-btn rg-btn--ghost" [disabled]="busy()" (click)="unlock()">
+            <mat-icon>lock_open</mat-icon> Changer d'idée
+        </button>
+    </section>
+
+    <section class="waiting">
+        <span class="rg-eyebrow">{{ readyCount() }} / {{ store.players().length }} prêts</span>
+        <div class="faces">
+            @for (player of store.players(); track player.id) {
+                <rg-avatar [skin]="player.skin" size="32px" [dimmed]="!player.locked" />
+            }
+        </div>
+    </section>
+} @else if (selected(); as entry) {
+    <section class="selected rg-enter">
+        <button class="rg-icon-btn back" (click)="select(null)" aria-label="Retour aux coureurs">
+            <mat-icon>arrow_back</mat-icon>
+        </button>
+        <rg-entry-visual [entry]="entry" size="132px" />
+        <h2 class="rg-title">{{ entry.name }}</h2>
+        @if (entry.seed > 0) {
+            <span class="rg-chip rg-chip--money"><mat-icon>redeem</mat-icon> Cagnotte {{ entry.seed | money }}</span>
+        }
+    </section>
+
+    <section class="stake rg-card">
+        <div class="amount">
+            <span class="rg-eyebrow">Ta mise</span>
+            <span class="big rg-money">{{ amount() | money }}</span>
+            <span class="rg-muted small">sur {{ balance() | money }}</span>
+        </div>
+        <div class="steps">
+            @for (step of steps; track step) {
+                <button class="rg-btn rg-btn--ghost" [disabled]="amount() >= balance()" (click)="add(step)">+{{ step }}</button>
+            }
+        </div>
+        <div class="row">
+            <button class="rg-btn rg-btn--ghost" [disabled]="amount() === 0" (click)="clear()">Effacer</button>
+            <button class="rg-btn rg-btn--money" [disabled]="amount() >= balance()" (click)="allIn()">Tapis !</button>
+        </div>
+        <button class="rg-btn rg-btn--large rg-btn--block" [disabled]="amount() < 1 || busy()" (click)="lock()">
+            <mat-icon>lock</mat-icon> Verrouiller
+        </button>
+    </section>
+} @else {
+    <section class="pick">
+        <div class="pick-header">
+            <span class="rg-eyebrow">Choisis ton coureur</span>
+            <button class="rg-btn rg-btn--ghost pass" [disabled]="busy()" (click)="pass()">Je passe</button>
+        </div>
+        <div class="entries rg-stagger">
+            @for (entry of race()?.entries ?? []; track entry.id; let i = $index) {
+                <button class="entry rg-card" [style.--i]="i" (click)="select(entry.id)">
+                    <rg-entry-visual [entry]="entry" size="84px" />
+                    <span class="name">{{ entry.name }}</span>
+                    @if (entry.seed > 0) {
+                        <span class="rg-chip rg-chip--money seed">+{{ entry.seed | money }}</span>
+                    }
+                </button>
+            }
+        </div>
+    </section>
+}

@@ -1,12 +1,16 @@
 import {bootstrapApplication} from '@angular/platform-browser';
-import {LOCALE_ID} from '@angular/core';
-import {provideRouter} from '@angular/router';
-import {RaceComponent} from './app/race.component';
+import {inject, provideAppInitializer} from '@angular/core';
+import {provideRouter, withComponentInputBinding} from '@angular/router';
+import {MatIconRegistry} from '@angular/material/icon';
+import {AppComponent} from './app/app.component';
+import {routes} from './app/app.routes';
 
-bootstrapApplication(RaceComponent, {
+bootstrapApplication(AppComponent, {
     providers: [
-        {provide: LOCALE_ID, useValue: 'en-CA'},
-        // The game is a single screen; the router is only there for ?isAdmin=true
-        provideRouter([]),
+        provideRouter(routes, withComponentInputBinding()),
+        // index.html loads the rounded icon font
+        provideAppInitializer(() => {
+            inject(MatIconRegistry).setDefaultFontSetClass('material-icons-round');
+        }),
     ]
-}).catch((err) => console.error(err));
+}).catch(err => console.error(err));

@@ -1,0 +1,115 @@
+.fab {
+    position: fixed;
+    right: calc(1rem + env(safe-area-inset-right));
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--rg-accent-strong);
+    color: #fff;
+    box-shadow: var(--rg-shadow-raised);
+    cursor: pointer;
+    transition: transform var(--rg-fast) var(--rg-ease);
+
+    &:active { transform: scale(0.92); }
+}
+
+.badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--rg-loss);
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 22px;
+    animation: rg-pop var(--rg-medium) var(--rg-ease-pop);
+}
+
+.scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 38;
+    background: var(--rg-scrim);
+    animation: rg-fade var(--rg-fast) ease-out;
+}
+
+.sheet {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+    z-index: 39;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 70dvh;
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--rg-surface-strong);
+    animation: rg-rise var(--rg-medium) var(--rg-ease);
+}
+
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-height: 120px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.message {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+
+    &.mine {
+        flex-direction: row-reverse;
+
+        .bubble {
+            background: var(--rg-accent-strong);
+            border-bottom-right-radius: 4px;
+            border-bottom-left-radius: var(--rg-radius-inner);
+        }
+    }
+}
+
+.bubble {
+    max-width: 78%;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--rg-radius-inner);
+    border-bottom-left-radius: 4px;
+    background: var(--rg-surface-inset);
+    overflow-wrap: anywhere;
+
+    p { font-size: 0.95rem; }
+}
+
+.author {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    opacity: 0.75;
+}
+
+.empty {
+    padding: 1.5rem 0;
+    text-align: center;
+}
+
+.composer {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.send {
+    color: var(--rg-accent);
+}

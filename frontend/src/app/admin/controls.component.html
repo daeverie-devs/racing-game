@@ -1,0 +1,114 @@
+@if (status() === 'lineup' && !collapsed()) {
+    <section class="panel rg-card rg-enter">
+        <span class="rg-eyebrow">Qui court? Touche les joueurs dans l'ordre de départ</span>
+        <div class="runners">
+            @for (player of store.players(); track player.id) {
+                <button class="runner" [class.selected]="lineup().includes(player.id)" (click)="toggleRunner(player.id)">
+                    <rg-avatar [skin]="player.skin" size="44px" />
+                    <span>{{ player.name }}</span>
+                    @if (lineup().includes(player.id)) {
+                        <span class="order">{{ lineup().indexOf(player.id) + 1 }}</span>
+                    }
+                </button>
+            }
+        </div>
+    </section>
+}
+
+@if (status() === 'watching' && !collapsed()) {
+    <section class="panel rg-card rg-enter">
+        <span class="rg-eyebrow">Qui a gagné?</span>
+        <div class="runners">
+            @for (entry of race()?.entries ?? []; track entry.id) {
+                <button class="runner" [class.selected]="winnerId() === entry.id" (click)="winnerId.set(entry.id)">
+                    <rg-entry-visual [entry]="entry" size="44px" />
+                    <span>{{ entry.name }}</span>
+                </button>
+            }
+        </div>
+    </section>
+}
+
+<nav class="bar rg-card" [class.collapsed]="collapsed()">
+    <button class="rg-icon-btn" (click)="collapsed.set(!collapsed())" [attr.aria-label]="collapsed() ? 'Afficher les contrôles' : 'Cacher les contrôles'">
+        <mat-icon>{{ collapsed() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+
+    @if (!collapsed()) {
+        <div class="status">
+            <span class="rg-eyebrow">{{ statusLabel() }}</span>
+            @if (game()!.raceIndex >= 0 && game()!.raceCount) {
+                <span class="small">Course {{ game()!.raceIndex + 1 }} / {{ game()!.raceCount }}</span>
+            } @else {
+                <span class="small">{{ store.players().length }} joueurs · {{ game()!.raceCount }} courses</span>
+            }
+        </div>
+
+        <div class="actions">
+            @switch (status()) {
+                @case ('lobby') {
+                    <button class="rg-btn" [disabled]="busy() || !game()!.raceCount" (click)="run('game.next')">
+                        <mat-icon>flag</mat-icon> Lancer la partie
+                    </button>
+                }
+                @case ('lineup') {
+                    <button class="rg-btn" [disabled]="busy() || lineup().length < 2" (click)="run('race.lineup', {playerIds: lineup()})">
+                        <mat-icon>how_to_reg</mat-icon> Ouvrir les paris ({{ lineup().length }})
+                    </button>
+                }
+                @case ('betting') {
+                    <span class="small">{{ lockedCount() }} / {{ store.players().length }} prêts</span>
+                    @if (!game()!.lockDeadline) {
+                        <button class="rg-btn" [disabled]="busy()" (click)="run('race.countdown', {seconds: game()!.countdownSeconds})">
+                            <mat-icon>timer</mat-icon> Compte à rebours {{ game()!.countdownSeconds }} s
+                        </button>
+                    }
+                    <button class="rg-btn rg-btn--ghost" [disabled]="busy()" (click)="run('race.reveal')">
+                        <mat-icon>lock</mat-icon> Verrouiller maintenant
+                    </button>
+                }
+                @case ('watching') {
+                    <button class="rg-btn rg-btn--money" [disabled]="busy() || !winnerId()" (click)="run('race.winner', {entryId: winnerId()})">
+                        <mat-icon>emoji_events</mat-icon> Confirmer le gagnant
+                    </button>
+                }
+                @case ('results') {
+                    <button class="rg-btn" [disabled]="busy()" (click)="run('game.next')">
+                        @if (isLastRace()) {
+                            <mat-icon>military_tech</mat-icon> Remise des prix
+                        } @else {
+                            <mat-icon>skip_next</mat-icon> Course suivante
+                        }
+                    </button>
+                }
+                @case ('awards') {
+                    <button class="rg-btn" [disabled]="busy()" (click)="run('awards.next')">
+                        <mat-icon>skip_next</mat-icon> Prix suivant
+                    </button>
+                }
+                @case ('podium') {
+                    @if (game()!.podiumStep < 3) {
+                        <button class="rg-btn rg-btn--money" [disabled]="busy()" (click)="run('podium.next')">
+                            <mat-icon>visibility</mat-icon>
+                            {{ game()!.podiumStep === 0 ? 'Révéler le 3e' : game()!.podiumStep === 1 ? 'Révéler le 2e' : 'Révéler le gagnant' }}
+                        </button>
+                    } @else {
+                        <span class="small">Bravo à tous!</span>
+                    }
+                }
+            }
+        </div>
+
+        <div class="tools">
+            <button class="rg-icon-btn" (click)="openEditor.emit()" aria-label="Éditeur" title="Courses, coureurs et parties">
+                <mat-icon>edit_note</mat-icon>
+            </button>
+            <button class="rg-icon-btn" (click)="reset()" aria-label="Recommencer la partie" title="Recommencer la partie">
+                <mat-icon>restart_alt</mat-icon>
+            </button>
+            <button class="rg-icon-btn" (click)="logout()" aria-label="Quitter l'admin" title="Quitter l'admin">
+                <mat-icon>logout</mat-icon>
+            </button>
+        </div>
+    }
+</nav>

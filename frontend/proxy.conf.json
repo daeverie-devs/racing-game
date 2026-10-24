@@ -3,5 +3,9 @@
     "target": "ws://localhost:8084",
     "secure": false,
     "ws": true
+  },
+  "/api": {
+    "target": "http://localhost:8084",
+    "secure": false
   }
 }

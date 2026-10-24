@@ -1,0 +1,63 @@
+<div class="join">
+    <header class="intro rg-enter">
+        <span class="rg-eyebrow">Bienvenue à l'hippodrome</span>
+        <h1 class="rg-title">Crée ton parieur</h1>
+    </header>
+
+    <section class="preview rg-card rg-enter">
+        @for (b of [bounce()]; track b) {
+            <rg-avatar class="hop" [skin]="skin()" size="150px" />
+        }
+        <button class="rg-icon-btn dice" (click)="shuffle()" aria-label="Personnage au hasard">
+            <mat-icon>casino</mat-icon>
+        </button>
+    </section>
+
+    <input class="rg-field name" placeholder="Ton nom" maxlength="24" autocomplete="nickname"
+           [ngModel]="name()" (ngModelChange)="name.set($event)" (keydown.enter)="join()" />
+
+    <section class="builder rg-card rg-enter">
+        <div class="rg-segmented" role="tablist">
+            @for (t of tabs; track t.key) {
+                <button role="tab" [attr.aria-pressed]="tab() === t.key" (click)="tab.set(t.key)">{{ t.label }}</button>
+            }
+        </div>
+
+        @if (tab() === 'colors') {
+            <div class="colors">
+                <span class="rg-label">Couleur principale</span>
+                <div class="swatches">
+                    @for (color of colors; track color.hex; let i = $index) {
+                        <button class="swatch" [style.background]="color.hex" [class.selected]="skin().main === i"
+                                [attr.aria-label]="color.name" (click)="set('main', i)"></button>
+                    }
+                </div>
+                <span class="rg-label">Couleur secondaire</span>
+                <div class="swatches">
+                    @for (color of colors; track color.hex; let i = $index) {
+                        <button class="swatch" [style.background]="color.hex" [class.selected]="skin().secondary === i"
+                                [attr.aria-label]="color.name" (click)="set('secondary', i)"></button>
+                    }
+                </div>
+            </div>
+        } @else {
+            <div class="options">
+                @for (label of options[part()]; track label; let i = $index) {
+                    <button class="option" [class.selected]="skin()[part()] === i" (click)="set(part(), i)">
+                        <rg-avatar [skin]="variant(part(), i)" size="56px" />
+                        <span>{{ label }}</span>
+                    </button>
+                }
+            </div>
+        }
+    </section>
+
+    <button class="rg-btn rg-btn--large rg-btn--block join-btn" [disabled]="!name().trim() || joining()" (click)="join()">
+        @if (joining()) {
+            <span class="rg-pulse">Connexion…</span>
+        } @else {
+            <span>Rejoindre la partie</span>
+            <mat-icon>flag</mat-icon>
+        }
+    </button>
+</div>
