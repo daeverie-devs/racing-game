@@ -1,0 +1,164 @@
+:host {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.stage {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.place {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.who {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.5rem;
+    min-height: 110px;
+}
+
+.winner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    text-align: center;
+    animation: rg-pop var(--rg-slow) var(--rg-ease-pop) both;
+
+    &.me .name { color: var(--rg-accent); }
+}
+
+// The champion floats gently once revealed
+.rank-1 .winner rg-avatar {
+    animation: float 3.2s ease-in-out 900ms infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.name {
+    max-width: 10rem;
+    overflow: hidden;
+    font-weight: 800;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.rank-1 .name {
+    color: var(--rg-gold);
+}
+
+.mystery {
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--rg-text-subtle);
+    animation: rg-pulse 1.6s ease-in-out infinite;
+}
+
+.block {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--rg-radius-inner) var(--rg-radius-inner) 0 0;
+    font-size: 2rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.rank-1 .block { height: 130px; background: linear-gradient(var(--rg-gold), #d97706); }
+.rank-2 .block { height: 95px; background: linear-gradient(var(--rg-silver), #64748b); }
+.rank-3 .block { height: 70px; background: linear-gradient(var(--rg-bronze), #b45309); }
+
+// One shine sweeps across a block when its place is revealed
+.revealed .block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: shine 1.4s var(--rg-ease) 300ms both;
+}
+
+@keyframes shine {
+    to { transform: translateX(120%); }
+}
+
+// ---------- Winner's spotlight ----------
+.spotlight {
+    position: absolute;
+    left: 50%;
+    bottom: 40%;
+    z-index: 0;
+    width: 200%;
+    aspect-ratio: 1;
+    pointer-events: none;
+    transform: translateX(-50%);
+    animation: rg-fade 1.2s var(--rg-ease) both;
+}
+
+.glow {
+    position: absolute;
+    inset: 15%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(252, 211, 77, 0.45) 0%, rgba(252, 211, 77, 0.12) 40%, transparent 70%);
+    animation: breathe 4s ease-in-out infinite;
+}
+
+.rays {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(252, 211, 77, 0.16) 0deg 6deg, transparent 6deg 24deg);
+    mask-image: radial-gradient(circle, #000 15%, transparent 65%);
+    -webkit-mask-image: radial-gradient(circle, #000 15%, transparent 65%);
+    animation: turn 60s linear infinite;
+}
+
+@keyframes turn {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.06); }
+}
+
+.rest {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    animation: rg-rise var(--rg-medium) var(--rg-ease) both;
+}
+
+:host(.large) {
+    gap: 1rem;
+
+    .who { min-height: 180px; }
+    .name { max-width: 16rem; font-size: 1.5rem; }
+    .rg-money { font-size: 1.2rem; }
+    .block { font-size: 3rem; }
+    .rank-1 .block { height: 150px; }
+    .rank-2 .block { height: 110px; }
+    .rank-3 .block { height: 80px; }
+    .mystery { font-size: 5rem; }
+}

@@ -1,24 +1,91 @@
-// Angular Material theme (the same one the game used inside master-trackers)
-@use '@angular/material' as mat;
+// One look for every screen: the tokens below, the .rg- building blocks in styles/_kit.scss and
+// the motion rules in styles/_motion.scss. A component's stylesheet only adds its own layout.
+// Inspired by master-trackers: frosted panels, Montserrat, pill buttons, soft shadows.
+@use 'styles/kit';
+@use 'styles/motion';
 
-html {
-    @include mat.theme((
-        color: (
-            primary: mat.$rose-palette,
-            tertiary: mat.$red-palette,
-        ),
-        typography: Roboto,
-        density: 0,
-    ));
+:root {
+    // Surfaces
+    --rg-bg: #0b1020;
+    --rg-bg-glow-1: rgba(99, 102, 241, 0.35);
+    --rg-bg-glow-2: rgba(236, 72, 153, 0.22);
+    --rg-surface: rgba(20, 27, 48, 0.72);
+    --rg-surface-strong: rgba(24, 32, 56, 0.92);
+    --rg-surface-inset: rgba(148, 163, 184, 0.1);
+    --rg-border: rgba(148, 163, 184, 0.16);
+    --rg-backdrop: blur(16px) saturate(140%);
+    --rg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+    --rg-shadow-raised: 0 16px 40px rgba(0, 0, 0, 0.5);
+    --rg-scrim: rgba(2, 6, 23, 0.65);
+
+    // Text
+    --rg-text: #f1f5f9;
+    --rg-text-muted: #94a3b8;
+    --rg-text-subtle: #64748b;
+
+    // Colors with a meaning
+    --rg-accent: #818cf8;
+    --rg-accent-strong: #6366f1;
+    --rg-accent-soft: rgba(129, 140, 248, 0.18);
+    --rg-accent-contrast: #ffffff;
+    --rg-money: #fbbf24;
+    --rg-money-soft: rgba(251, 191, 36, 0.16);
+    --rg-gain: #34d399;
+    --rg-gain-soft: rgba(52, 211, 153, 0.16);
+    --rg-loss: #fb7185;
+    --rg-loss-soft: rgba(251, 113, 133, 0.16);
+    --rg-gold: #fcd34d;
+    --rg-silver: #cbd5e1;
+    --rg-bronze: #f59e0b;
+
+    // Shape and rhythm
+    --rg-radius: 18px;
+    --rg-radius-inner: 12px;
+    --rg-gap: 0.75rem;
+    --rg-touch: 48px;
+    --rg-focus: 0 0 0 3px rgba(129, 140, 248, 0.5);
+    --rg-font: 'Montserrat', system-ui, sans-serif;
+
+    // Motion: short and eased out, never bouncy except the deliberate "pop"
+    --rg-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --rg-ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --rg-fast: 150ms;
+    --rg-medium: 320ms;
+    --rg-slow: 700ms;
+}
+
+html, body {
+    height: 100%;
 }
 
 body {
-    color-scheme: light;
-    background-color: var(--mat-sys-surface);
-    color: var(--mat-sys-on-surface);
-    font: var(--mat-sys-body-medium);
     margin: 0;
     overflow: hidden;
+    background:
+        radial-gradient(60rem 40rem at 10% -10%, var(--rg-bg-glow-1), transparent 60%),
+        radial-gradient(50rem 40rem at 110% 110%, var(--rg-bg-glow-2), transparent 60%),
+        var(--rg-bg);
+    color: var(--rg-text);
+    font-family: var(--rg-font);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+button, input, select, textarea {
+    font: inherit;
+    color: inherit;
+}
+
+h1, h2, h3, p {
+    margin: 0;
+}
+
+img {
+    display: block;
 }

@@ -1,0 +1,34 @@
+<button class="fab" (click)="toggle()" [attr.aria-label]="open() ? 'Fermer le chat' : 'Ouvrir le chat'">
+    <mat-icon>{{ open() ? 'close' : 'chat_bubble' }}</mat-icon>
+    @if (unread() > 0 && !open()) {
+        <span class="badge">{{ unread() > 9 ? '9+' : unread() }}</span>
+    }
+</button>
+
+@if (open()) {
+    <div class="scrim" (click)="toggle()"></div>
+    <section class="sheet rg-card">
+        <span class="rg-eyebrow">Chat</span>
+        <div class="messages" #list>
+            @for (message of store.chat(); track message.id) {
+                <div class="message" [class.mine]="message.playerId === store.me()?.id">
+                    <rg-avatar [skin]="message.skin" size="28px" />
+                    <div class="bubble">
+                        <span class="author">{{ message.name }}</span>
+                        <p>{{ message.text }}</p>
+                    </div>
+                </div>
+            } @empty {
+                <p class="empty rg-muted">Personne n'a encore rien dit. Lance le trash talk.</p>
+            }
+        </div>
+        <form class="composer" (ngSubmit)="send()">
+            <input #input class="rg-field" name="text" [ngModel]="text()" (ngModelChange)="text.set($event)" maxlength="280"
+                   placeholder="Ton message" autocomplete="off" enterkeyhint="send" />
+            <button class="rg-icon-btn send" type="submit" [disabled]="!text().trim() || sending()" aria-label="Envoyer"
+                    (mousedown)="$event.preventDefault()">
+                <mat-icon>send</mat-icon>
+            </button>
+        </form>
+    </section>
+}

@@ -1,0 +1,201 @@
+<div class="screen">
+    @switch (status()) {
+        @case ('lobby') {
+            <section class="lobby">
+                <div class="join rg-card rg-enter">
+                    <span class="rg-eyebrow">{{ game()?.name }}</span>
+                    <h1 class="headline">Bienvenue à l'hippodrome</h1>
+                    <qrcode class="qr" [qrdata]="joinUrl" [width]="320" [margin]="1" errorCorrectionLevel="M"
+                            colorDark="#0b1020" colorLight="#ffffff" elementType="canvas" />
+                    <p class="url">{{ joinUrl }}</p>
+                    @if (localOnly) {
+                        <p class="warning"><mat-icon>warning</mat-icon> Ouvre cet écran avec l'adresse IP du portable, sinon les téléphones ne pourront pas se connecter.</p>
+                    }
+                </div>
+                <div class="crowd">
+                    <span class="rg-eyebrow">{{ players().length }} parieur{{ players().length > 1 ? 's' : '' }}</span>
+                    <div class="crowd-grid">
+                        @for (player of players(); track player.id) {
+                            <div class="crowd-player rg-enter-pop">
+                                <rg-avatar [skin]="player.skin" size="96px" [dimmed]="!player.connected" />
+                                <span class="name">{{ player.name }}</span>
+                            </div>
+                        } @empty {
+                            <p class="rg-muted empty">Scanne le code pour rejoindre!</p>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+
+        @case ('lineup') {
+            <section class="centered rg-enter">
+                <span class="rg-eyebrow">Course {{ game()!.raceIndex + 1 }} sur {{ game()!.raceCount }}</span>
+                <h1 class="headline">{{ race()?.name || 'Course des joueurs' }}</h1>
+                <p class="lead rg-muted">Qui va courir? L'admin choisit dans la salle…</p>
+                <div class="crowd-grid">
+                    @for (player of players(); track player.id) {
+                        <rg-avatar [skin]="player.skin" size="80px" />
+                    }
+                </div>
+            </section>
+        }
+
+        @case ('betting') {
+            <section class="race">
+                <header class="race-header">
+                    <div>
+                        <span class="rg-eyebrow">Course {{ game()!.raceIndex + 1 }} sur {{ game()!.raceCount }}</span>
+                        <h1 class="headline">{{ race()?.name || 'Faites vos jeux' }}</h1>
+                        @if (game()!.isFinalRace) {
+                            <span class="final-banner rg-enter-pop"><mat-icon>local_fire_department</mat-icon> Course finale : gains ×{{ game()!.finalMultiplier }}</span>
+                        }
+                    </div>
+                    @if (game()!.lockDeadline) {
+                        <rg-countdown class="countdown" [deadline]="game()!.lockDeadline" [total]="game()!.countdownSeconds" />
+                    }
+                </header>
+
+                <div class="entries rg-stagger">
+                    @for (entry of race()?.entries ?? []; track entry.id; let i = $index) {
+                        <div class="entry rg-card" [style.--i]="i">
+                            <rg-entry-visual [entry]="entry" size="min(18vh, 180px)" />
+                            <h2 class="entry-name">{{ entry.name }}</h2>
+                            <span class="start-odds">{{ entry.startOdds | odds }}</span>
+                            <span class="rg-eyebrow">cote de départ</span>
+                            <span class="record">{{ entry.record | record }}</span>
+                        </div>
+                    }
+                </div>
+
+                <footer class="ready rg-card">
+                    <span class="ready-count"><strong>{{ readyCount() }}</strong> / {{ players().length }} prêts</span>
+                    <div class="ready-faces">
+                        @for (player of players(); track player.id) {
+                            <div class="ready-player" [class.locked]="player.locked">
+                                <rg-avatar [skin]="player.skin" size="52px" [dimmed]="!player.locked" />
+                                @if (player.locked) {
+                                    <mat-icon class="lock rg-enter-pop">lock</mat-icon>
+                                }
+                            </div>
+                        }
+                    </div>
+                </footer>
+            </section>
+        }
+
+        @case ('watching') {
+            <section class="watching">
+                <div class="video rg-card">
+                    @if (video(); as src) {
+                        <iframe [src]="src" title="Course" allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <!-- Some videos refuse to play embedded: open them on YouTube instead -->
+                        <a class="youtube-link" [href]="videoLink()" target="_blank" rel="noopener">
+                            <mat-icon>open_in_new</mat-icon> Ouvrir sur YouTube
+                        </a>
+                    } @else {
+                        <div class="no-video">
+                            <mat-icon>sports_score</mat-icon>
+                            <span>{{ race()?.type === 'players' ? 'Que la course commence!' : 'Pas de vidéo pour cette course' }}</span>
+                        </div>
+                    }
+                </div>
+
+                <aside class="odds">
+                    @if (game()!.isFinalRace) {
+                        <span class="final-banner"><mat-icon>local_fire_department</mat-icon> Course finale : gains ×{{ game()!.finalMultiplier }}</span>
+                    }
+                    <div class="pot rg-card">
+                        <span class="rg-eyebrow">Cagnotte totale</span>
+                        <span class="pot-value rg-money">{{ race()?.pot | money }}</span>
+                    </div>
+                    @for (entry of race()?.entries ?? []; track entry.id; let i = $index) {
+                        <div class="odds-entry rg-card rg-enter" [style.animation-delay.ms]="i * 80">
+                            <rg-entry-visual [entry]="entry" size="64px" />
+                            <div class="odds-main">
+                                <div class="odds-top">
+                                    <span class="entry-name">{{ entry.name }}</span>
+                                    <span class="odds-value">{{ entry.odds | odds }}</span>
+                                </div>
+                                <div class="bar">
+                                    @for (bettor of entry.bettors; track bettor.playerId) {
+                                        <div class="segment" [style.flex-grow]="bettor.amount" [style.background]="bettorColor(bettor.playerId)"></div>
+                                    }
+                                    <div class="segment empty" [style.flex-grow]="maxTotal() - (entry.total ?? 0)"></div>
+                                </div>
+                                <div class="bettors">
+                                    @for (bettor of entry.bettors; track bettor.playerId) {
+                                        <rg-avatar [skin]="store.playersById().get(bettor.playerId)?.skin" size="24px" />
+                                    }
+                                    <span class="rg-money total">{{ entry.total | money }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </aside>
+            </section>
+        }
+
+        @case ('results') {
+            <section class="results">
+                <div class="winner-card rg-card">
+                    @if (winner(); as entry) {
+                        <span class="rg-eyebrow">Le gagnant</span>
+                        <rg-entry-visual class="rg-enter-pop" [entry]="entry" size="min(26vh, 240px)" />
+                        <h1 class="headline">{{ entry.name }}</h1>
+                        <span class="rg-chip rg-chip--accent">Cote {{ entry.odds | odds }}</span>
+                        <div class="payouts">
+                            @for (bettor of winners(entry); track bettor.playerId; let i = $index) {
+                                <div class="payout rg-enter" [style.animation-delay.ms]="600 + i * 90">
+                                    <rg-avatar [skin]="store.playersById().get(bettor.playerId)?.skin" size="36px" />
+                                    <span class="payout-name">{{ bettorName(bettor.playerId) }}</span>
+                                    <span class="rg-gain">{{ bettor.payout | money:true }}</span>
+                                </div>
+                            } @empty {
+                                <p class="rg-muted">Personne n'avait misé dessus! La cagnotte passe à la prochaine course.</p>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="board">
+                    <span class="rg-eyebrow">Classement</span>
+                    <rg-leaderboard [players]="players()" [animate]="true" [showDelta]="true" [large]="true" [columnCount]="players().length > 8 ? 2 : 1" />
+                    @if (debtors().length) {
+                        <div class="wall rg-card rg-enter" style="animation-delay: 1.6s">
+                            <span class="wall-title">Mur de la honte</span>
+                            @for (player of debtors(); track player.id) {
+                                <div class="debtor">
+                                    <rg-avatar [skin]="player.skin" size="36px" />
+                                    <span class="debtor-name">{{ player.name }}</span>
+                                    <span class="debtor-amount">doit {{ player.loans | money }} à la banque de papa</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
+        @case ('awards') {
+            <section class="centered">
+                @if (currentAward(); as award) {
+                    @for (a of [award]; track a.key) {
+                        <rg-award-card [award]="a" [players]="store.playersById()" [bonus]="game()!.awardBonus"
+                                       [index]="game()!.awards.length - 1" [count]="game()!.awardCount" [large]="true" />
+                    }
+                }
+            </section>
+        }
+
+        @case ('podium') {
+            <section class="podium">
+                <h1 class="headline">Classement final</h1>
+                <rg-podium [players]="players()" [step]="game()!.podiumStep" [large]="true" />
+            </section>
+        }
+    }
+</div>
+
+<rg-chat-bubbles />
+<rg-shame-popup />

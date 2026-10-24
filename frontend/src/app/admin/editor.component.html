@@ -1,0 +1,265 @@
+<div class="scrim" (click)="close.emit()"></div>
+
+<section class="editor rg-card rg-enter">
+    <header class="top">
+        <h1 class="rg-title">Éditeur</h1>
+        <div class="rg-segmented tabs">
+            <button [attr.aria-pressed]="tab() === 'races'" (click)="tab.set('races')">Courses</button>
+            <button [attr.aria-pressed]="tab() === 'racers'" (click)="tab.set('racers')">Coureurs</button>
+            <button [attr.aria-pressed]="tab() === 'games'" (click)="tab.set('games')">Parties</button>
+        </div>
+        <button class="rg-icon-btn" (click)="close.emit()" aria-label="Fermer"><mat-icon>close</mat-icon></button>
+    </header>
+
+    <div class="body">
+        @switch (tab()) {
+            <!-- ---------- Races of a game ---------- -->
+            @case ('races') {
+                @if (selectedGame(); as game) {
+                    <div class="toolbar">
+                        <select class="rg-field game-select" [ngModel]="game.id" (ngModelChange)="selectedGameId.set($event)">
+                            @for (g of data().games; track g.id) {
+                                <option [ngValue]="g.id">{{ g.name }}{{ g.active ? ' (active)' : '' }}</option>
+                            }
+                        </select>
+                        <button class="rg-btn" (click)="newRace()"><mat-icon>add</mat-icon> Nouvelle course</button>
+                    </div>
+
+                    <ol class="list">
+                        @for (race of game.races; track race.id; let i = $index, first = $first, last = $last) {
+                            <li class="race-row rg-inset" [class.locked]="lockedRaceIds().has(race.id)">
+                                <span class="index">{{ i + 1 }}</span>
+                                <div class="race-main">
+                                    <span class="race-name">{{ raceTitle(race, i) }}</span>
+                                    <div class="race-meta">
+                                        @if (race.type === 'players') {
+                                            <span class="rg-chip rg-chip--accent"><mat-icon>groups</mat-icon> Joueurs du lobby</span>
+                                        } @else {
+                                            <div class="thumbs">
+                                                @for (id of race.racerIds; track id) {
+                                                    @if (racersById().get(id); as racer) {
+                                                        <img [src]="racer.imageUrl" [alt]="racer.name" [title]="racer.name"
+                                                             [class.winner]="race.presetWinnerRacerId === id" />
+                                                    }
+                                                }
+                                            </div>
+                                            @if (race.racerIds.length < 2) {
+                                                <span class="rg-chip rg-chip--loss">Au moins 2 coureurs</span>
+                                            }
+                                            @if (!race.presetWinnerRacerId) {
+                                                <span class="rg-chip">Pas de gagnant choisi</span>
+                                            }
+                                        }
+                                        @if (!race.link) {
+                                            <span class="rg-chip">Pas de vidéo</span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (lockedRaceIds().has(race.id)) {
+                                    <span class="rg-chip"><mat-icon>lock</mat-icon> Jouée</span>
+                                } @else {
+                                    <button class="rg-icon-btn" [disabled]="first || busy()" (click)="move(race, -1)" aria-label="Monter"><mat-icon>arrow_upward</mat-icon></button>
+                                    <button class="rg-icon-btn" [disabled]="last || busy()" (click)="move(race, 1)" aria-label="Descendre"><mat-icon>arrow_downward</mat-icon></button>
+                                    <button class="rg-icon-btn" (click)="editRace(race)" aria-label="Modifier"><mat-icon>edit</mat-icon></button>
+                                    <button class="rg-icon-btn" (click)="deleteRace(race)" aria-label="Supprimer"><mat-icon>delete</mat-icon></button>
+                                }
+                            </li>
+                        } @empty {
+                            <p class="empty rg-muted">Aucune course dans cette partie. Ajoute la première!</p>
+                        }
+                    </ol>
+                } @else {
+                    <p class="empty rg-muted">Crée d'abord une partie dans l'onglet Parties.</p>
+                }
+            }
+
+            <!-- ---------- Racer library ---------- -->
+            @case ('racers') {
+                <div class="toolbar">
+                    <input class="rg-field" placeholder="Chercher un coureur" [ngModel]="racerSearch()" (ngModelChange)="racerSearch.set($event)" />
+                    <button class="rg-btn" (click)="newRacer()"><mat-icon>add</mat-icon> Nouveau coureur</button>
+                </div>
+                <div class="racer-grid">
+                    @for (racer of filteredRacers(); track racer.id) {
+                        <div class="racer-card rg-inset">
+                            @if (racer.imageUrl) {
+                                <img [src]="racer.imageUrl" [alt]="racer.name" />
+                            }
+                            <span class="racer-name">{{ racer.name }}</span>
+                            @if (racer.pastRuns) {
+                                <span class="rg-muted racer-history">{{ {wins: racer.pastWins, runs: racer.pastRuns} | record }} avant l'app</span>
+                            }
+                            <div class="racer-actions">
+                                <button class="rg-icon-btn" (click)="editRacer(racer.id)" aria-label="Modifier"><mat-icon>edit</mat-icon></button>
+                                <button class="rg-icon-btn" (click)="deleteRacer(racer.id)" aria-label="Supprimer"><mat-icon>delete</mat-icon></button>
+                            </div>
+                        </div>
+                    } @empty {
+                        <p class="empty rg-muted">Aucun coureur. Ajoute-en un: une capture d'écran collée suffit.</p>
+                    }
+                </div>
+            }
+
+            <!-- ---------- Games ---------- -->
+            @case ('games') {
+                <div class="toolbar">
+                    <span class="rg-muted">La partie active est celle que les téléphones rejoignent.</span>
+                    <button class="rg-btn" (click)="newGame()"><mat-icon>add</mat-icon> Nouvelle partie</button>
+                </div>
+                <div class="list">
+                    @for (game of data().games; track game.id) {
+                        <div class="game-row rg-inset" [class.active]="game.active">
+                            <div class="race-main">
+                                <span class="race-name">{{ game.name }}
+                                    @if (game.active) { <span class="rg-chip rg-chip--gain">Active</span> }
+                                </span>
+                                <span class="rg-muted small">
+                                    {{ game.races.length }} courses · départ {{ game.startingBalance | money }} · prix {{ game.awardBonus | money }} · compte à rebours {{ game.countdownSeconds }} s
+                                </span>
+                            </div>
+                            <button class="rg-btn rg-btn--ghost" (click)="openRaces(game)">Courses</button>
+                            @if (!game.active) {
+                                <button class="rg-btn rg-btn--ghost" (click)="activate(game)">Jouer</button>
+                            }
+                            <button class="rg-icon-btn" (click)="editGame(game)" aria-label="Modifier"><mat-icon>edit</mat-icon></button>
+                            <button class="rg-icon-btn" (click)="resetGame(game)" aria-label="Recommencer"><mat-icon>restart_alt</mat-icon></button>
+                            @if (!game.active) {
+                                <button class="rg-icon-btn" (click)="deleteGame(game)" aria-label="Supprimer"><mat-icon>delete</mat-icon></button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</section>
+
+<!-- ---------- Race form ---------- -->
+@if (raceForm(); as form) {
+    <div class="modal-scrim"></div>
+    <form class="modal rg-card rg-enter" (ngSubmit)="saveRace()">
+        <h2 class="rg-title">{{ form.id ? 'Modifier la course' : 'Nouvelle course' }}</h2>
+
+        <label class="rg-label" for="race-name">Nom</label>
+        <input id="race-name" class="rg-field" name="name" maxlength="80" placeholder="Ex.: Le grand prix des billes"
+               [ngModel]="form.name" (ngModelChange)="patchRace({name: $event})" />
+
+        <span class="rg-label">Type</span>
+        <div class="rg-segmented">
+            <button type="button" [attr.aria-pressed]="form.type === 'racers'" (click)="patchRace({type: 'racers'})">Coureurs (vidéo)</button>
+            <button type="button" [attr.aria-pressed]="form.type === 'players'" (click)="patchRace({type: 'players'})">Joueurs du lobby</button>
+        </div>
+
+        <label class="rg-label" for="race-link">Vidéo YouTube {{ form.type === 'players' ? '(optionnelle)' : '' }}</label>
+        <input id="race-link" class="rg-field" name="link" placeholder="https://youtu.be/…?t=90"
+               [ngModel]="form.link" (ngModelChange)="patchRace({link: $event})" />
+
+        @if (form.type === 'racers') {
+            <div class="label-row">
+                <span class="rg-label">Coureurs ({{ form.racerIds.length }}) · touche l'étoile pour le gagnant</span>
+                <button type="button" class="rg-btn rg-btn--ghost small-btn" (click)="newRacer()"><mat-icon>add_a_photo</mat-icon> Nouveau</button>
+            </div>
+            <div class="picker">
+                @for (racer of data().racers; track racer.id) {
+                    <div class="pick" [class.selected]="form.racerIds.includes(racer.id)">
+                        <button type="button" class="pick-main" (click)="toggleRaceRacer(racer.id)">
+                            @if (racer.imageUrl) { <img [src]="racer.imageUrl" [alt]="racer.name" /> }
+                            <span>{{ racer.name }}</span>
+                        </button>
+                        @if (form.racerIds.includes(racer.id)) {
+                            <button type="button" class="star" [class.on]="form.presetWinnerRacerId === racer.id"
+                                    (click)="patchRace({presetWinnerRacerId: form.presetWinnerRacerId === racer.id ? null : racer.id})"
+                                    aria-label="Gagnant">
+                                <mat-icon>{{ form.presetWinnerRacerId === racer.id ? 'star' : 'star_outline' }}</mat-icon>
+                            </button>
+                        }
+                    </div>
+                } @empty {
+                    <p class="rg-muted">Aucun coureur pour l'instant. Clique sur « Nouveau ».</p>
+                }
+            </div>
+        } @else {
+            <p class="rg-muted">Tu choisiras les joueurs qui courent au moment de la course, parmi ceux du lobby. Le gagnant se choisit après la course.</p>
+        }
+
+        <div class="modal-actions">
+            <button type="button" class="rg-btn rg-btn--ghost" (click)="raceForm.set(null)">Annuler</button>
+            <button type="submit" class="rg-btn" [disabled]="busy()">Enregistrer</button>
+        </div>
+    </form>
+}
+
+<!-- ---------- Racer form ---------- -->
+@if (racerForm(); as form) {
+    <div class="modal-scrim top"></div>
+    <form class="modal top rg-card rg-enter" (ngSubmit)="saveRacer()">
+        <h2 class="rg-title">{{ form.id ? 'Modifier le coureur' : 'Nouveau coureur' }}</h2>
+
+        <label class="drop" [class.dragging]="dragging()" (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+            @if (form.preview) {
+                <img [src]="form.preview" alt="Aperçu" />
+            } @else {
+                <mat-icon>content_paste</mat-icon>
+            }
+            <span><strong>Colle une capture d'écran</strong> (Ctrl+V), glisse un PNG/JPEG ici, ou clique pour choisir</span>
+            <input type="file" accept="image/png,image/jpeg,image/webp" (change)="pickFile($event)" hidden />
+        </label>
+
+        <label class="rg-label" for="racer-name">Nom</label>
+        <input id="racer-name" class="rg-field" name="name" maxlength="80" placeholder="Ex.: Bille rouge"
+               [ngModel]="form.name" (ngModelChange)="patchRacer({name: $event})" />
+
+        <span class="rg-label">Historique avant l'app (optionnel)</span>
+        <div class="history">
+            <label>
+                <input class="rg-field" type="number" name="pastWins" min="0" [max]="form.pastRuns"
+                       [ngModel]="form.pastWins" (ngModelChange)="patchRacer({pastWins: +$event || 0})" />
+                <span>victoires</span>
+            </label>
+            <span class="rg-muted">en</span>
+            <label>
+                <input class="rg-field" type="number" name="pastRuns" min="0"
+                       [ngModel]="form.pastRuns" (ngModelChange)="patchRacer({pastRuns: +$event || 0})" />
+                <span>courses</span>
+            </label>
+        </div>
+        <span class="rg-muted hint">Compte dans sa fiche et dans sa cote de départ, en plus des courses jouées dans l'app.</span>
+
+        <div class="modal-actions">
+            <button type="button" class="rg-btn rg-btn--ghost" (click)="racerForm.set(null)">Annuler</button>
+            @if (!form.id) {
+                <button type="button" class="rg-btn rg-btn--ghost" [disabled]="busy() || !form.name.trim() || !form.image" (click)="saveRacer(true)">Enregistrer et un autre</button>
+            }
+            <button type="submit" class="rg-btn" [disabled]="busy() || !form.name.trim() || (!form.id && !form.image)">Enregistrer</button>
+        </div>
+    </form>
+}
+
+<!-- ---------- Game form ---------- -->
+@if (gameForm(); as form) {
+    <div class="modal-scrim"></div>
+    <form class="modal rg-card rg-enter" (ngSubmit)="saveGame()">
+        <h2 class="rg-title">{{ form.id ? 'Modifier la partie' : 'Nouvelle partie' }}</h2>
+        <label class="rg-label" for="game-name">Nom</label>
+        <input id="game-name" class="rg-field" name="name" maxlength="80" placeholder="Ex.: Chalet 2026"
+               [(ngModel)]="form.name" />
+        <div class="three">
+            <div>
+                <label class="rg-label" for="game-balance">Argent de départ</label>
+                <input id="game-balance" class="rg-field" type="number" name="startingBalance" min="100" [(ngModel)]="form.startingBalance" />
+            </div>
+            <div>
+                <label class="rg-label" for="game-bonus">Bonus par prix</label>
+                <input id="game-bonus" class="rg-field" type="number" name="awardBonus" min="0" [(ngModel)]="form.awardBonus" />
+            </div>
+            <div>
+                <label class="rg-label" for="game-countdown">Compte à rebours (s)</label>
+                <input id="game-countdown" class="rg-field" type="number" name="countdownSeconds" min="3" max="300" [(ngModel)]="form.countdownSeconds" />
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="rg-btn rg-btn--ghost" (click)="gameForm.set(null)">Annuler</button>
+            <button type="submit" class="rg-btn" [disabled]="busy() || !form.name.trim()">Enregistrer</button>
+        </div>
+    </form>
+}

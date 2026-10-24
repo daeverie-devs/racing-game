@@ -1,0 +1,125 @@
+:host {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.join {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rg-gap);
+    max-width: 480px;
+    margin: 0 auto;
+    padding: calc(1.25rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+.intro {
+    text-align: center;
+}
+
+.preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem 1rem 1.25rem;
+}
+
+.hop {
+    animation: hop 420ms var(--rg-ease-pop);
+}
+
+@keyframes hop {
+    0% { transform: scale(0.92) translateY(4px); }
+    60% { transform: scale(1.04) translateY(-6px); }
+    100% { transform: none; }
+}
+
+.dice {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    color: var(--rg-accent);
+}
+
+.name {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.builder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+
+    .rg-segmented button {
+        min-width: 0;
+        font-size: 0.82rem;
+    }
+}
+
+.options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.25rem;
+    border: 2px solid transparent;
+    border-radius: var(--rg-radius-inner);
+    background: var(--rg-surface-inset);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--rg-fast), background-color var(--rg-fast), transform var(--rg-fast) var(--rg-ease);
+
+    &:active { transform: scale(0.96); }
+
+    &.selected {
+        border-color: var(--rg-accent);
+        background: var(--rg-accent-soft);
+    }
+}
+
+.colors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    .rg-label:not(:first-child) {
+        margin-top: 0.5rem;
+    }
+}
+
+.swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+}
+
+.swatch {
+    aspect-ratio: 1;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform var(--rg-fast) var(--rg-ease), border-color var(--rg-fast);
+
+    &:active { transform: scale(0.9); }
+
+    &.selected {
+        border-color: var(--rg-text);
+        transform: scale(1.08);
+    }
+}
+
+.join-btn {
+    position: sticky;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    box-shadow: var(--rg-shadow-raised);
+}

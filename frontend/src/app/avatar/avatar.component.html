@@ -1,0 +1,80 @@
+<svg viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+        <clipPath [attr.id]="clipId">
+            <path [attr.d]="body()" />
+        </clipPath>
+    </defs>
+
+    <!-- Body, belly patch in the secondary color, soft highlight -->
+    <path [attr.d]="body()" [attr.fill]="main()" />
+    <g [attr.clip-path]="'url(#' + clipId + ')'">
+        <ellipse cx="50" cy="86" rx="26" ry="14" [attr.fill]="secondary()" />
+        <ellipse cx="36" cy="38" rx="12" ry="7" fill="#fff" opacity="0.22" />
+    </g>
+    <path [attr.d]="body()" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="3" />
+
+    <!-- Eyes -->
+    <g class="eyes">
+        @switch (eyes()) {
+            @case (0) {
+                <circle cx="39" cy="54" r="8" fill="#fff" /><circle cx="61" cy="54" r="8" fill="#fff" />
+                <circle cx="40" cy="55" r="4" fill="#111827" /><circle cx="62" cy="55" r="4" fill="#111827" />
+                <circle cx="41.5" cy="53.5" r="1.4" fill="#fff" /><circle cx="63.5" cy="53.5" r="1.4" fill="#fff" />
+            }
+            @case (1) {
+                <path d="M32 57q7-10 14 0M54 57q7-10 14 0" fill="none" stroke="#111827" stroke-width="4" stroke-linecap="round" />
+            }
+            @case (2) {
+                <circle cx="39" cy="56" r="7" fill="#fff" /><circle cx="61" cy="56" r="7" fill="#fff" />
+                <circle cx="40" cy="57" r="3.5" fill="#111827" /><circle cx="60" cy="57" r="3.5" fill="#111827" />
+                <path d="M30 44l15 6M70 44l-15 6" stroke="#111827" stroke-width="4" stroke-linecap="round" />
+            }
+            @case (3) {
+                <path d="M32 54q7 6 14 0M54 54q7 6 14 0" fill="none" stroke="#111827" stroke-width="4" stroke-linecap="round" />
+                <path d="M33 49h11M56 49h11" stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round" />
+            }
+            @case (4) {
+                <circle cx="50" cy="52" r="13" fill="#fff" />
+                <circle cx="50" cy="53" r="7" [attr.fill]="secondary()" />
+                <circle cx="50" cy="53" r="4" fill="#111827" />
+                <circle cx="53" cy="49" r="2" fill="#fff" />
+            }
+            @case (5) {
+                <rect x="27" y="47" width="21" height="13" rx="5" fill="#111827" />
+                <rect x="52" y="47" width="21" height="13" rx="5" fill="#111827" />
+                <path d="M48 51h4" stroke="#111827" stroke-width="3" />
+                <path d="M31 50l5 5M56 50l5 5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity="0.6" />
+            }
+        }
+    </g>
+
+    <!-- Modifier, in the secondary color -->
+    <g class="modifier" stroke="rgba(0,0,0,0.3)" stroke-width="2" stroke-linejoin="round">
+        @switch (modifier()) {
+            @case (0) {
+                <path d="M32 31l2-19l8 10l8-14l8 14l8-10l2 19z" [attr.fill]="secondary()" />
+                <circle cx="50" cy="24" r="2.5" fill="#fff" stroke="none" />
+            }
+            @case (1) {
+                <path d="M28 31a22 17 0 0 1 44 0z" [attr.fill]="secondary()" />
+                <path d="M66 29h18a3.5 3.5 0 0 1 0 7h-18z" [attr.fill]="secondary()" />
+            }
+            @case (2) {
+                <path d="M31 33q-14-12-9-28q8 14 19 21z" [attr.fill]="secondary()" />
+                <path d="M69 33q14-12 9-28q-8 14-19 21z" [attr.fill]="secondary()" />
+            }
+            @case (3) {
+                <path d="M50 27v-16" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
+                <circle cx="50" cy="9" r="6" [attr.fill]="secondary()" />
+            }
+            @case (4) {
+                <path d="M66 26l-13-9v18z" [attr.fill]="secondary()" />
+                <path d="M66 26l13-9v18z" [attr.fill]="secondary()" />
+                <circle cx="66" cy="26" r="4.5" [attr.fill]="secondary()" />
+            }
+            @case (5) {
+                <path d="M50 67c-5-6-15-7-21 1c7-1 12 3 21 0c9 3 14-1 21 0c-6-8-16-7-21-1z" fill="#1f2937" stroke="none" />
+            }
+        }
+    </g>
+</svg>

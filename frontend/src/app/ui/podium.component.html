@@ -1,0 +1,36 @@
+<div class="stage">
+    @for (place of places(); track place.rank) {
+        <div class="place" [class]="'rank-' + place.rank" [class.revealed]="place.revealed">
+            @if (place.rank === 1 && place.revealed) {
+                <!-- The winner's spotlight: a warm glow with slowly turning light rays -->
+                <div class="spotlight" aria-hidden="true">
+                    <div class="rays"></div>
+                    <div class="glow"></div>
+                </div>
+            }
+            <div class="who">
+                @if (place.revealed) {
+                    @for (player of place.players; track player.id) {
+                        <div class="winner" [class.me]="player.id === highlightId()">
+                            <rg-avatar [skin]="player.skin" [size]="large() ? (place.rank === 1 ? '130px' : '96px') : (place.rank === 1 ? '72px' : '56px')" />
+                            <span class="name">{{ player.name }}</span>
+                            <span class="rg-money">{{ player.score | money }}</span>
+                        </div>
+                    } @empty {
+                        <span class="nobody rg-muted">—</span>
+                    }
+                } @else {
+                    <span class="mystery">?</span>
+                }
+            </div>
+            <div class="block"><span>{{ place.rank }}</span></div>
+        </div>
+    }
+</div>
+
+@if (rest().length) {
+    <div class="rest">
+        <span class="rg-eyebrow">Les autres</span>
+        <rg-leaderboard [players]="rest()" [columnCount]="restColumns()" [highlightId]="highlightId()" />
+    </div>
+}

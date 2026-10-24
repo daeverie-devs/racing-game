@@ -1,0 +1,161 @@
+@if (!store.ready()) {
+    <div class="center rg-muted rg-pulse">Connexion à l'hippodrome…</div>
+} @else if (!me()) {
+    <rg-join />
+} @else {
+    <div class="page">
+        <header class="me rg-card">
+            <rg-avatar [skin]="me()!.skin" size="44px" />
+            <div class="who">
+                <span class="name">{{ me()!.name }}</span>
+                <span class="rg-muted small">{{ me()!.rank | ordinal }} sur {{ store.players().length }}</span>
+            </div>
+            <div class="wallet">
+                @if (status() === 'awards' || status() === 'podium') {
+                    <span class="rg-money balance">{{ me()!.score | money }}</span>
+                    <span class="rg-muted small">Score final</span>
+                } @else {
+                    <span class="rg-money balance">{{ me()!.balance | money }}</span>
+                    @if (me()!.loans > 0) {
+                        <span class="rg-loss small">Prêts {{ me()!.loans | money }}</span>
+                    }
+                }
+            </div>
+            @if (canBorrow()) {
+                <button class="rg-icon-btn loan" (click)="loanOpen.set(!loanOpen())" aria-label="Emprunter">
+                    <mat-icon>account_balance</mat-icon>
+                </button>
+            }
+        </header>
+
+        @if (loanOpen() && canBorrow()) {
+            <section class="loan-panel rg-card rg-enter">
+                <span class="rg-eyebrow">La banque de papa</span>
+                <p class="rg-muted">T'es cassé? Emprunte, mais ça sera soustrait de ton score final.</p>
+                <div class="loan-amounts">
+                    @for (amount of loanAmounts(); track amount) {
+                        <button class="rg-btn rg-btn--money" (click)="borrow(amount)">{{ amount | money }}</button>
+                    }
+                </div>
+            </section>
+        }
+
+        <main class="content">
+            @switch (status()) {
+                @case ('lobby') {
+                    <section class="message rg-enter">
+                        <h1 class="rg-title">En attente des autres parieurs<span class="dots"><span>.</span><span>.</span><span>.</span></span></h1>
+                        <p class="rg-muted">La partie commence quand l'admin donne le départ. Regarde le grand écran!</p>
+                        <div class="crowd rg-stagger">
+                            @for (player of store.players(); track player.id; let i = $index) {
+                                <div class="crowd-player" [style.--i]="i">
+                                    <rg-avatar [skin]="player.skin" size="48px" [dimmed]="!player.connected" />
+                                    <span class="small">{{ player.name }}</span>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+                @case ('lineup') {
+                    <section class="message rg-enter">
+                        <span class="rg-eyebrow">Course {{ game()!.raceIndex + 1 }} sur {{ game()!.raceCount }}</span>
+                        <h1 class="rg-title">{{ race()?.name || 'Course des joueurs' }}</h1>
+                        <p class="rg-muted">L'admin choisit qui va courir. Échauffe-toi, au cas où.</p>
+                    </section>
+                }
+                @case ('betting') {
+                    <div class="race-title">
+                        <span class="rg-eyebrow">Course {{ game()!.raceIndex + 1 }} sur {{ game()!.raceCount }}</span>
+                        <h1 class="rg-title">{{ race()?.name || 'Place tes paris' }}</h1>
+                        @if (running()) {
+                            <span class="rg-chip rg-chip--accent">Tu cours dans celle-là!</span>
+                        }
+                    </div>
+                    <rg-betting />
+                }
+                @case ('watching') {
+                    <section class="watching rg-card rg-enter-pop">
+                        <mat-icon class="eye">visibility</mat-icon>
+                        <h1 class="rg-title">Regarde la course mon esti!</h1>
+                        <p class="rg-muted small">(ou pas, c'est comme tu veux, sérieux, chu pas ta mère)</p>
+                        @if (myEntry(); as entry) {
+                            <div class="my-bet">
+                                <rg-entry-visual [entry]="entry" size="72px" />
+                                <div>
+                                    <span class="rg-eyebrow">Ta mise</span>
+                                    <p><strong class="rg-money">{{ bet()!.amount | money }}</strong> sur <strong>{{ entry.name }}</strong></p>
+                                    <p class="rg-muted small">Cote {{ entry.odds | odds }} · gain possible {{ possibleWin() | money }}</p>
+                                </div>
+                            </div>
+                        } @else {
+                            <p>Tu n'as pas misé sur cette course.</p>
+                        }
+                    </section>
+                }
+                @case ('results') {
+                    <section class="results rg-enter">
+                        @if (winner(); as entry) {
+                            <div class="winner rg-card">
+                                <span class="rg-eyebrow">Le gagnant</span>
+                                <rg-entry-visual class="rg-enter-pop" [entry]="entry" size="96px" />
+                                <h2 class="rg-title">{{ entry.name }}</h2>
+                            </div>
+                        }
+                        <div class="pool rg-card">
+                            <div class="pool-head">
+                                <span class="rg-eyebrow">Mises par coureur</span>
+                                <span class="rg-money small">{{ race()?.pot | money }}</span>
+                            </div>
+                            @for (entry of entriesByTotal(); track entry.id) {
+                                <div class="pool-row" [class.won]="entry.id === race()?.winnerEntryId" [class.mine]="entry.id === bet()?.entryId">
+                                    <rg-entry-visual [entry]="entry" size="32px" />
+                                    <span class="pool-name">{{ entry.name }}</span>
+                                    @if (entry.id === race()?.winnerEntryId) {
+                                        <mat-icon class="trophy">emoji_events</mat-icon>
+                                    }
+                                    <span class="rg-muted small">{{ entry.bettors.length }} <mat-icon class="tiny">person</mat-icon></span>
+                                    <span class="pool-odds">{{ entry.odds | odds }}</span>
+                                    <span class="rg-money pool-total">{{ entry.total | money }}</span>
+                                </div>
+                            }
+                        </div>
+                        @if (me()!.lastDelta !== null) {
+                            <div class="delta rg-card rg-enter-pop" [class.won]="me()!.lastDelta! > 0" [class.lost]="me()!.lastDelta! < 0">
+                                @if (me()!.lastDelta! > 0) {
+                                    <span class="rg-eyebrow">Bien joué!</span>
+                                } @else if (me()!.lastDelta! < 0) {
+                                    <span class="rg-eyebrow">Ouch</span>
+                                } @else {
+                                    <span class="rg-eyebrow">Pas de mise</span>
+                                }
+                                <span class="big">{{ me()!.lastDelta | money:true }}</span>
+                            </div>
+                        }
+                        <rg-leaderboard [players]="store.players()" [animate]="true" [showDelta]="true" [highlightId]="me()!.id" />
+                    </section>
+                }
+                @case ('awards') {
+                    @if (currentAward(); as award) {
+                        @for (a of [award]; track a.key) {
+                            <rg-award-card [award]="a" [players]="store.playersById()" [bonus]="game()!.awardBonus"
+                                           [index]="game()!.awards.length - 1" [count]="game()!.awardCount" />
+                        }
+                    }
+                }
+                @case ('podium') {
+                    <section class="message">
+                        <span class="rg-eyebrow">Classement final</span>
+                        @if (game()!.podiumStep >= 3) {
+                            <h1 class="rg-title">Tu finis {{ me()!.rank | ordinal }}!</h1>
+                        } @else {
+                            <h1 class="rg-title">Roulement de tambour…</h1>
+                        }
+                    </section>
+                    <rg-podium [players]="store.players()" [step]="game()!.podiumStep" [highlightId]="me()!.id" />
+                }
+            }
+        </main>
+    </div>
+
+    <rg-chat-drawer />
+}
