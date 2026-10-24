@@ -57,11 +57,6 @@
     text-align: center;
 }
 
-.seed {
-    position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
-}
 
 // ---------- Selected racer ----------
 .selected {
@@ -138,4 +133,41 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.35rem;
+}
+
+.tiny {
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.estimate {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+}
+
+// Starting odds on each racer card, like a morning line in the race program
+.start-odds {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: var(--rg-accent);
+}
+
+// Last race: payouts doubled
+.final {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--rg-money);
+    border-radius: 999px;
+    background: var(--rg-money-soft);
+    color: var(--rg-money);
+    font-weight: 800;
+
+    mat-icon {
+        width: 20px;
+        height: 20px;
+        font-size: 20px;
+    }
 }

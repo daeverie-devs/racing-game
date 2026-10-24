@@ -72,11 +72,11 @@ const waitFor = async (admin, predicate, label, timeout = 8000) => {
     return admin.state;
 };
 
-/** Money never appears or disappears: balances + pool + bets in play = start money + loans */
+/** Money is never lost: balances + pool + bets in play = start money + loans + what the house put in */
 const checkMoney = (state, inPlay, label) => {
     const balances = state.players.reduce((s, p) => s + p.balance, 0);
     const loans = state.players.reduce((s, p) => s + p.loans, 0);
-    const expected = PLAYERS * 5000 + loans;
+    const expected = PLAYERS * 5000 + loans + state.game.houseMoney;
     const actual = balances + state.game.pool + inPlay;
     check(Math.abs(actual - expected) < 0.05, `${label}: money conserved (${actual.toFixed(2)} vs ${expected.toFixed(2)})`);
 };
@@ -133,6 +133,11 @@ const main = async () => {
     check(!early.ok, 'phone cannot declare a winner');
     const tooMuch = await phones[0].req('bet.lock', {entryId: entries1[0].id, amount: 999999});
     check(!tooMuch.ok, `bet over balance refused (${tooMuch.error})`);
+    const tooLittle = await phones[0].req('bet.lock', {entryId: entries1[0].id, amount: 10});
+    check(!tooLittle.ok && phones[0].state.me.minBet === 250, `bet under 5 % refused (${tooLittle.error})`);
+    // Morning line: every racer shows starting odds within the track limits before anyone bets
+    check(entries1.every(e => e.startOdds >= 2.6 - 0.01 && e.startOdds <= 31 + 0.01),
+        `race 1: starting odds shown, within 2.6× to 31× (${entries1.map(e => e.startOdds.toFixed(1)).join(', ')})`);
 
     // Spam: 30 drafts per phone in parallel, then everyone locks (P20 passes)
     await Promise.all(phones.map(p => Promise.all(Array.from({length: 30}, (_, k) =>
@@ -141,15 +146,17 @@ const main = async () => {
     const bets1 = new Map();
     await Promise.all(phones.map((p, i) => {
         if (i === PLAYERS - 1) return p.ok('bet.pass');
-        const bet = {entryId: entries1[i % 4].id, amount: 100 * (i + 1)};
+        const bet = {entryId: entries1[i % 4].id, amount: 250 + 100 * i};
         bets1.set(p.id, bet);
         return p.ok('bet.lock', bet);
     }));
     state = await waitFor(admin, s => s.game.status === 'watching', 'race 1 auto reveal when all locked');
     const inPlay1 = [...bets1.values()].reduce((s, b) => s + b.amount, 0);
-    check(Math.abs(state.race.pot - inPlay1) < 0.01, `race 1: pot = sum of locked bets (${state.race.pot})`);
+    // The house stakes 150 per player on the morning line
+    check(Math.abs(state.race.pot - inPlay1 - PLAYERS * 150) < 0.05, `race 1: pot = locked bets + house stake (${state.race.pot})`);
     check(state.players.find(p => p.id === phones[PLAYERS - 1].id).passed, 'race 1: P20 shown as passed');
-    checkMoney(state, inPlay1, 'race 1 revealed');
+    // The house's morning-line stake is on the table too
+    checkMoney(state, inPlay1 + PLAYERS * 150, 'race 1 revealed');
     const lateBet = await phones[0].req('bet.lock', {entryId: entries1[0].id, amount: 10});
     check(!lateBet.ok, 'bet after reveal refused');
     check(admin.state.admin?.presetWinnerEntryId === entries1[1].id, 'admin sees the preset winner');
@@ -163,6 +170,9 @@ const main = async () => {
     state = await waitFor(admin, s => s.game.status === 'results', 'race 1 results');
     checkMoney(state, 0, 'race 1 paid');
     check(state.players.every(p => p.prevRank !== null), 'race 1: rank before payout recorded');
+    const paid1 = state.race.entries.find(e => e.id === entries1[1].id).bettors;
+    check(paid1.length > 0 && paid1.every(b => b.payout >= b.amount * 1.05 - 0.01 && b.payout <= b.amount * 10 + 0.01),
+        `race 1: winners get between 1.05× and 10× (${paid1.map(b => (b.payout / b.amount).toFixed(2)).join(', ')})`);
 
     // ---------- Race 2: player race, lineup + countdown ----------
     await admin.ok('game.next');
@@ -172,18 +182,19 @@ const main = async () => {
     state = await waitFor(admin, s => s.game.status === 'betting', 'race 2 betting');
     check(state.race.entries.every(e => e.skin && e.playerId), 'race 2: entries are players with skins');
     const entries2 = state.race.entries;
-    // Half lock, the others only draft; the countdown locks the drafts
+    // Half lock, the others only draft (some under the minimum); the countdown locks the drafts
     await Promise.all(phones.map((p, i) => i < 10
-        ? p.ok('bet.lock', {entryId: entries2[i % 4].id, amount: 50})
+        ? p.ok('bet.lock', {entryId: entries2[i % 4].id, amount: p.state.me.minBet})
         : p.ok('bet.draft', {entryId: entries2[i % 4].id, amount: 25})));
+    const p16Min = phones[15].state.me.minBet;
     await phones[0].ok('bet.unlock');
-    await phones[0].ok('bet.lock', {entryId: entries2[3].id, amount: 75});
+    await phones[0].ok('bet.lock', {entryId: entries2[3].id, amount: phones[0].state.me.minBet + 100});
     await admin.ok('race.countdown', {seconds: 3});
     state = await waitFor(admin, s => s.game.lockDeadline !== null, 'countdown visible');
     state = await waitFor(admin, s => s.game.status === 'watching', 'countdown locks everyone in', 6000);
     // Each phone gets the new state a moment after the admin
     await waitFor(phones[15], s => s.game.status === 'watching', 'P16 sees the reveal');
-    check(phones[15].state.me.bet?.locked && phones[15].state.me.bet.amount === 25, `race 2: draft locked by the countdown (${JSON.stringify(phones[15].state.me.bet)})`);
+    check(phones[15].state.me.bet?.locked && phones[15].state.me.bet.amount === p16Min, `race 2: draft under the minimum raised to it and locked by the countdown (${JSON.stringify(phones[15].state.me.bet)})`);
     check(phones[0].state.me.bet.entryId === entries2[3].id, 'race 2: unlock + relock changed the pick');
     await admin.ok('race.winner', {entryId: entries2[0].id});
     state = await waitFor(admin, s => s.game.status === 'results', 'race 2 results');
@@ -193,11 +204,13 @@ const main = async () => {
     await admin.ok('game.next');
     state = await waitFor(admin, s => s.game.status === 'betting' && s.game.raceIndex === 2, 'race 3 betting');
     const entries3 = state.race.entries;
-    await Promise.all(phones.map(p => p.ok('bet.lock', {entryId: entries3[0].id, amount: 10})));
+    await Promise.all(phones.map(p => p.ok('bet.lock', {entryId: entries3[0].id, amount: p.state.me.minBet})));
     state = await waitFor(admin, s => s.game.status === 'watching', 'race 3 reveal');
     await admin.ok('race.winner', {entryId: entries3[2].id});
     state = await waitFor(admin, s => s.game.status === 'results', 'race 3 results');
-    check(Math.abs(state.game.pool - PLAYERS * 10) < 0.01, `race 3: unclaimed pot went to the pool (${state.game.pool})`);
+    // Only the house was on the winner: the whole pot feeds the pool
+    check(Math.abs(state.game.pool - state.race.pot) < 0.05, `race 3: unclaimed pot went to the pool (${state.game.pool})`);
+    const pool3 = state.game.pool;
     checkMoney(state, 0, 'race 3 pooled');
 
     // ---------- Loans and chat ----------
@@ -205,7 +218,7 @@ const main = async () => {
     await admin.ok('game.next');
     state = await waitFor(admin, s => s.game.status === 'betting' && s.game.raceIndex === 3, 'race 4 betting');
     const seeds = state.race.entries.reduce((s, e) => s + e.seed, 0);
-    check(Math.abs(seeds - PLAYERS * 10) < 0.01 && state.game.pool === 0, `race 4: pool spread over the racers (${state.race.entries.map(e => e.seed).join(', ')})`);
+    check(Math.abs(seeds - pool3) < 0.05 && state.game.pool === 0, `race 4: pool spread over the racers (${state.race.entries.map(e => e.seed).join(', ')})`);
     const entries4 = state.race.entries;
     const p1 = phones[0];
     const loanTooRich = await p1.req('loan.take', {amount: 500});
@@ -213,11 +226,14 @@ const main = async () => {
     const p1Balance = state.players.find(p => p.id === p1.id).balance;
     await Promise.all(phones.map((p, i) => p.ok('bet.lock', i === 0
         ? {entryId: entries4[0].id, amount: Math.floor(p1Balance)}
-        : {entryId: entries4[1 + (i % 3)].id, amount: i === 5 ? 1 : 20})));
+        : {entryId: entries4[1 + (i % 3)].id, amount: p.state.me.minBet + (i === 5 ? 0 : 50)})));
     state = await waitFor(admin, s => s.game.status === 'watching', 'race 4 reveal');
     await admin.ok('race.winner', {entryId: entries4[1].id});
     state = await waitFor(admin, s => s.game.status === 'results', 'race 4 results');
     checkMoney(state, 0, 'race 4 paid (pool included)');
+    const paid4 = state.race.entries.find(e => e.id === entries4[1].id).bettors;
+    check(paid4.length > 0 && paid4.every(b => b.payout >= b.amount * 2.1 - 0.02),
+        `race 4 (last): payouts doubled, at least 2.1× (${paid4.map(b => (b.payout / b.amount).toFixed(2)).join(', ')})`);
     const loan = await p1.req('loan.take', {amount: 800});
     check(loan.ok, `broke player can borrow (${loan.error ?? 'ok'})`);
     const loan2 = await p1.req('loan.take', {amount: 2000});
@@ -254,10 +270,12 @@ const main = async () => {
     const keys = state.game.awards.map(a => a.key).join(', ');
     check(['biggestBet', 'bestShot', 'chatterbox', 'athlete', 'debtor', 'cheapskate'].every(k => keys.includes(k)), `all 6 awards given (${keys})`);
     const cheapskate = state.game.awards.find(a => a.key === 'cheapskate');
-    check(cheapskate?.playerIds.includes(phones[5].id) && cheapskate.value === 1, 'smallest bet award goes to the 1$ bet');
+    check(!!cheapskate && cheapskate.value >= 1, `smallest bet award given (${cheapskate?.value})`);
+    const debtor = state.game.awards.find(a => a.key === 'debtor');
+    check(debtor?.bonus === -250, `loan award is a 250 penalty (${debtor?.bonus})`);
     const bonuses = state.players.reduce((s, p) => s + p.bonus, 0);
-    const winners = state.game.awards.reduce((s, a) => s + a.playerIds.length, 0);
-    check(bonuses === winners * 500, `award bonuses paid once (${bonuses})`);
+    const expectedBonus = state.game.awards.reduce((s, a) => s + a.playerIds.length * a.bonus, 0);
+    check(Math.abs(bonuses - expectedBonus) < 0.01, `award bonuses paid once (${bonuses})`);
     for (let i = 0; i < 4; i++) await admin.ok('podium.next');
     state = await waitFor(admin, s => s.game.podiumStep === 3, 'podium fully revealed');
     const first = state.players.find(p => p.rank === 1);

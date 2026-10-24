@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, computed, effect, inject, signal, un
 import {MatIcon} from '@angular/material/icon';
 import {AvatarComponent} from '../avatar/avatar.component';
 import {GameStore} from '../core/game.store';
-import {MoneyPipe} from '../core/format';
+import {MoneyPipe, OddsPipe} from '../core/format';
 import {CountdownComponent} from '../ui/countdown.component';
 import {EntryVisualComponent} from '../ui/entry-visual.component';
 
@@ -15,7 +15,7 @@ const STEPS = [1, 10, 100, 1000];
 @Component({
     selector: 'rg-betting',
     standalone: true,
-    imports: [MatIcon, AvatarComponent, MoneyPipe, CountdownComponent, EntryVisualComponent],
+    imports: [MatIcon, AvatarComponent, MoneyPipe, OddsPipe, CountdownComponent, EntryVisualComponent],
     templateUrl: 'betting.component.html',
     styleUrl: 'betting.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +35,19 @@ export class BettingComponent {
     readonly selected = computed(() => this.race()?.entries.find(e => e.id === this.selectedId()) ?? null);
     readonly lockedEntry = computed(() => this.race()?.entries.find(e => e.id === this.bet()?.entryId) ?? null);
     readonly balance = computed(() => Math.floor(this.me()?.balance ?? 0));
+    readonly minBet = computed(() => this.store.state()?.me?.minBet ?? 1);
+    readonly game = this.store.game;
+    /**
+     * What the bet would return at the starting odds, within the cap and doubled on the last race.
+     * An estimate: the real odds depend on everyone's bets, revealed when all are locked
+     */
+    readonly estimate = computed(() => {
+        const game = this.game();
+        const odds = this.selected()?.startOdds;
+        if (!game || !odds || this.amount() < 1) return null;
+        const ratio = Math.min(Math.max(odds, game.minReturn), game.payoutCap);
+        return this.amount() * ratio * (game.isFinalRace ? game.finalMultiplier : 1);
+    });
     readonly readyCount = computed(() => this.store.players().filter(p => p.locked).length);
 
     private draftTimer: ReturnType<typeof setTimeout> | null = null;
@@ -54,6 +67,8 @@ export class BettingComponent {
 
     select(id: number | null) {
         this.selectedId.set(id);
+        // Picking a racer starts at the minimum bet
+        if (id !== null && this.amount() < this.minBet()) this.amount.set(Math.min(this.minBet(), this.balance()));
         this.saveDraft();
     }
 
@@ -67,13 +82,14 @@ export class BettingComponent {
         this.saveDraft();
     }
 
+    /** Back to the minimum bet */
     clear() {
-        this.amount.set(0);
+        this.amount.set(Math.min(this.minBet(), this.balance()));
         this.saveDraft();
     }
 
     async lock() {
-        if (this.busy() || !this.selectedId() || this.amount() < 1) return;
+        if (this.busy() || !this.selectedId() || this.amount() < this.minBet()) return;
         this.busy.set(true);
         await this.store.act('bet.lock', {entryId: this.selectedId(), amount: this.amount()});
         this.busy.set(false);

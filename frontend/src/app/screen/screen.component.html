@@ -47,6 +47,9 @@
                     <div>
                         <span class="rg-eyebrow">Course {{ game()!.raceIndex + 1 }} sur {{ game()!.raceCount }}</span>
                         <h1 class="headline">{{ race()?.name || 'Faites vos jeux' }}</h1>
+                        @if (game()!.isFinalRace) {
+                            <span class="final-banner rg-enter-pop"><mat-icon>local_fire_department</mat-icon> Course finale : gains ×{{ game()!.finalMultiplier }}</span>
+                        }
                     </div>
                     @if (game()!.lockDeadline) {
                         <rg-countdown class="countdown" [deadline]="game()!.lockDeadline" [total]="game()!.countdownSeconds" />
@@ -58,9 +61,8 @@
                         <div class="entry rg-card" [style.--i]="i">
                             <rg-entry-visual [entry]="entry" size="min(18vh, 180px)" />
                             <h2 class="entry-name">{{ entry.name }}</h2>
-                            @if (entry.seed > 0) {
-                                <span class="rg-chip rg-chip--money"><mat-icon>redeem</mat-icon> Cagnotte {{ entry.seed | money }}</span>
-                            }
+                            <span class="start-odds">{{ entry.startOdds | odds }}</span>
+                            <span class="rg-eyebrow">cote de départ</span>
                         </div>
                     }
                 </div>
@@ -100,6 +102,9 @@
                 </div>
 
                 <aside class="odds">
+                    @if (game()!.isFinalRace) {
+                        <span class="final-banner"><mat-icon>local_fire_department</mat-icon> Course finale : gains ×{{ game()!.finalMultiplier }}</span>
+                    }
                     <div class="pot rg-card">
                         <span class="rg-eyebrow">Cagnotte totale</span>
                         <span class="pot-value rg-money">{{ race()?.pot | money }}</span>

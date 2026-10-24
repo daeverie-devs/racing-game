@@ -35,6 +35,14 @@ export class PlayerPageComponent {
 
     readonly myEntry = computed(() => this.race()?.entries.find(e => e.id === this.bet()?.entryId) ?? null);
     readonly winner = computed(() => this.race()?.entries.find(e => e.id === this.race()?.winnerEntryId) ?? null);
+    /** What my bet pays if my racer wins: the odds kept between the minimum return and the cap, doubled on the last race */
+    readonly possibleWin = computed(() => {
+        const game = this.game();
+        const odds = this.myEntry()?.odds;
+        const amount = this.bet()?.amount ?? 0;
+        if (!game || !odds || !amount) return 0;
+        return amount * Math.min(Math.max(odds, game.minReturn), game.payoutCap) * (game.isFinalRace ? game.finalMultiplier : 1);
+    });
     readonly entriesByTotal = computed(() => [...this.race()?.entries ?? []].sort((a, b) => (b.total ?? 0) - (a.total ?? 0)));
     readonly currentAward = computed(() => {
         const awards = this.game()?.awards ?? [];

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import * as http from 'node:http';
 import {sequelize} from './sequelize';
-import {Racer} from './models';
+import {addMissingColumns, Racer} from './models';
 import {restoreDeadline} from './game/engine';
 import {getConnectionCount, initSocket} from './net/socket';
 
@@ -42,6 +42,7 @@ const startServer = async () => {
     try {
         await sequelize.authenticate();
         await sequelize.sync();
+        await addMissingColumns();
         initSocket(server);
         await restoreDeadline();
 

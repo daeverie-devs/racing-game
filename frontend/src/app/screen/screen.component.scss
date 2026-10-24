@@ -440,3 +440,26 @@
     overflow: hidden;
     text-align: center;
 }
+
+// Morning line on the big screen's racer cards
+.start-odds {
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--rg-accent);
+}
+
+.final-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--rg-money);
+    border-radius: 999px;
+    background: var(--rg-money-soft);
+    color: var(--rg-money);
+    font-size: 1.1rem;
+    font-weight: 800;
+    align-self: flex-start;
+}

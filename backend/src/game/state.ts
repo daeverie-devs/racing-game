@@ -2,7 +2,9 @@ import {Op} from 'sequelize';
 import {Bet, Game, Message, Player, Race, RaceEntry, Racer} from '../models';
 import {racerImageUrl} from './editor';
 import {getActiveGame, getRaces} from './engine';
-import {LOAN_MAX, LOAN_THRESHOLD, rankPlayers, score} from './rules';
+import {
+    FINAL_RACE_MULTIPLIER, LOAN_MAX, LOAN_THRESHOLD, MIN_BET_SHARE, MIN_RETURN, minBet, oddsOf, PAYOUT_CAP, rankPlayers, score
+} from './rules';
 
 /** What every screen receives. Bet amounts stay hidden until everyone is locked in */
 export const buildPublicState = async (connectedPlayerIds: Set<number>) => {
@@ -24,6 +26,8 @@ export const buildPublicState = async (connectedPlayerIds: Set<number>) => {
             raceCount: races.length,
             lockDeadline: game.lockDeadline ? Number(game.lockDeadline) : null,
             pool: game.pool,
+            // Money the house put in so far, so totals can be audited
+            houseMoney: game.houseMoney,
             countdownSeconds: game.countdownSeconds,
             awardBonus: game.awardBonus,
             awardStep: game.awardStep,
@@ -33,6 +37,12 @@ export const buildPublicState = async (connectedPlayerIds: Set<number>) => {
             awardCount: game.awards?.length ?? 0,
             loanThreshold: LOAN_THRESHOLD,
             loanMax: LOAN_MAX,
+            minBetShare: MIN_BET_SHARE,
+            payoutCap: PAYOUT_CAP,
+            minReturn: MIN_RETURN,
+            // The last race pays double
+            isFinalRace: race !== null && game.raceIndex === races.length - 1,
+            finalMultiplier: FINAL_RACE_MULTIPLIER,
         },
         players: players.map(p => {
             const bet = bets.find(b => b.playerId === p.id);
@@ -62,7 +72,9 @@ const buildRace = async (race: Race, bets: Bet[], players: Player[], revealed: b
     const racers = racerIds.length
         ? await Racer.findAll({where: {id: {[Op.in]: racerIds}}, attributes: ['id', 'name', 'imageType', 'imageVersion']})
         : [];
-    const pot = bets.reduce((sum, b) => sum + b.amount, 0) + entries.reduce((sum, e) => sum + e.seed, 0);
+    // As on a tote board: odds = the whole pot over what sits on the entry (players, house, pool)
+    const house = entries.reduce((sum, e) => sum + e.house + e.seed, 0);
+    const pot = bets.reduce((sum, b) => sum + b.amount, 0) + house;
 
     return {
         id: race.id,
@@ -83,8 +95,10 @@ const buildRace = async (race: Race, bets: Bet[], players: Player[], revealed: b
                 playerId: e.playerId,
                 skin: player?.skin ?? null,
                 seed: e.seed,
+                // The morning line, shown from the start: the house's and the pool's money only
+                startOdds: oddsOf(house, e.house + e.seed),
                 total: revealed ? total : null,
-                odds: revealed && total > 0 ? pot / total : null,
+                odds: revealed ? oddsOf(pot, total + e.house + e.seed) : null,
                 bettors: revealed
                     ? entryBets.map(b => ({playerId: b.playerId, amount: b.amount, payout: finished ? b.payout : null}))
                     : [],
@@ -98,6 +112,7 @@ export const buildPrivateState = async (player: Player, raceId: number | null) =
     const bet = raceId ? await Bet.findOne({where: {raceId, playerId: player.id}}) : null;
     return {
         playerId: player.id,
+        minBet: minBet(player.balance),
         bet: bet ? {entryId: bet.entryId, amount: bet.amount, locked: bet.locked, payout: bet.payout} : null,
     };
 };

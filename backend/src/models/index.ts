@@ -1,4 +1,4 @@
-import {CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model} from 'sequelize';
+import {CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, ModelStatic} from 'sequelize';
 import {sequelize} from '../sequelize';
 
 // Game flow: lobby -> (lineup ->) betting -> watching -> results -> next race ... -> awards -> podium
@@ -39,6 +39,8 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     declare countdownSeconds: CreationOptional<number>;
     // Computed once when the last race ends, so the bonuses are paid exactly once
     declare awards: Award[] | null;
+    // Money the house put in (morning-line stakes, minimum returns, final-race doubling), for audits
+    declare houseMoney: CreationOptional<number>;
 }
 
 export interface Award {
@@ -47,6 +49,8 @@ export interface Award {
     description: string;
     value: number;
     playerIds: number[];
+    /** What each winner gets: the game's award bonus, or a penalty (the loan award) */
+    bonus?: number;
 }
 
 export class Race extends Model<InferAttributes<Race>, InferCreationAttributes<Race>> {
@@ -69,6 +73,8 @@ export class RaceEntry extends Model<InferAttributes<RaceEntry>, InferCreationAt
     declare racerId: number | null;
     declare playerId: number | null;
     declare seed: CreationOptional<number>;
+    // The house's morning-line stake on this entry
+    declare house: CreationOptional<number>;
 }
 
 export class Player extends Model<InferAttributes<Player>, InferCreationAttributes<Player>> {
@@ -131,6 +137,7 @@ Game.init({
     awardBonus: money(500),
     countdownSeconds: {type: DataTypes.INTEGER, allowNull: false, defaultValue: 15},
     awards: {type: DataTypes.JSON, allowNull: true},
+    houseMoney: money(),
 }, {sequelize, tableName: 'game', timestamps: false});
 
 Race.init({
@@ -151,6 +158,7 @@ RaceEntry.init({
     racerId: {type: DataTypes.INTEGER, allowNull: true},
     playerId: {type: DataTypes.INTEGER, allowNull: true},
     seed: money(),
+    house: money(),
 }, {sequelize, tableName: 'race_entry', timestamps: false});
 
 Player.init({
@@ -202,3 +210,17 @@ Player.hasMany(Message, {foreignKey: 'playerId', onDelete: 'CASCADE'});
 
 /** Rounds money to cents, so floating point never leaves 4899.999997 in the database */
 export const cents = (value: number) => Math.round(value * 100) / 100;
+
+/** Adds columns introduced after a database was created (sync() only creates missing tables) */
+export const addMissingColumns = async () => {
+    const qi = sequelize.getQueryInterface();
+    const models: ModelStatic<Model>[] = [Racer, Game, Race, RaceEntry, Player, Bet, Message];
+    for (const model of models) {
+        const table = model.getTableName() as string;
+        const existing = await qi.describeTable(table);
+        for (const [name, attribute] of Object.entries(model.getAttributes())) {
+            const column = attribute.field ?? name;
+            if (!existing[column]) await qi.addColumn(table, column, attribute);
+        }
+    }
+};

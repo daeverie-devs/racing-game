@@ -4,8 +4,8 @@ import {fn, col, Op} from 'sequelize';
 import {Award, Bet, cents, Game, Message, Player, Race, RaceEntry, Skin} from '../models';
 import {sequelize} from '../sequelize';
 import {
-    CHAT_COOLDOWN_MS, CHAT_MAX, computePayouts, GameError, LOAN_MAX, LOAN_THRESHOLD, MIN_ENTRIES,
-    parseAmount, parseName, parseSkin, pickAwards, rankPlayers, splitPool
+    CHAT_COOLDOWN_MS, CHAT_MAX, FINAL_RACE_MULTIPLIER, GameError, HOUSE_STAKE_PER_PLAYER, LOAN_MAX, LOAN_THRESHOLD,
+    MIN_ENTRIES, minBet, morningLine, parseAmount, parseName, parseSkin, pickAwards, rankPlayers, settleRace, splitPool
 } from './rules';
 import {runExclusive} from './queue';
 
@@ -132,8 +132,8 @@ export const lockBet = async (player: Player, data: {entryId?: unknown, amount?:
     const entryId = await validEntryId(race.id, data.entryId);
     if (!entryId) throw new GameError('Choisis un coureur');
     const amount = parseAmount(data.amount);
-    if (amount < 1) throw new GameError('Mise au moins 1$');
     if (amount > player.balance) throw new GameError('Pas assez d\'argent');
+    if (amount < minBet(player.balance)) throw new GameError(`Mise minimum ${minBet(player.balance)} $`);
     await upsertBet(race.id, player.id, {entryId, amount, locked: true});
     await revealIfAllLocked(game, race);
 };
@@ -169,7 +169,9 @@ const reveal = async (game: Game, race: Race) => {
         for (const player of players) {
             const bet = await findBet(race.id, player.id);
             let entryId = bet?.entryId ?? null;
-            let amount = Math.min(bet?.amount ?? 0, Math.floor(player.balance));
+            // A pick left under the minimum is raised to it, as long as the balance allows
+            const wanted = entryId ? Math.max(bet?.amount ?? 0, minBet(player.balance)) : 0;
+            let amount = Math.min(wanted, Math.floor(player.balance));
             if (!entryId || !entryIds.has(entryId) || amount < 1) {
                 entryId = null;
                 amount = 0;
@@ -226,13 +228,41 @@ export const forceReveal = async () => {
 
 // ---------- Race flow ----------
 
+/** Past wins and runs of each entry: racers across every game, players in this game's player races */
+const recordsOf = async (game: Game, entries: RaceEntry[]) => {
+    const done = await Race.findAll({where: {winnerEntryId: {[Op.ne]: null}}, attributes: ['id', 'gameId', 'winnerEntryId']});
+    const doneIds = done.map(r => r.id);
+    const past = doneIds.length ? await RaceEntry.findAll({where: {raceId: {[Op.in]: doneIds}}}) : [];
+    const winners = new Set(done.map(r => r.winnerEntryId));
+    const sameGame = new Set(done.filter(r => r.gameId === game.id).map(r => r.id));
+    return entries.map(entry => {
+        const runs = past.filter(p => entry.racerId !== null
+            ? p.racerId === entry.racerId
+            : p.playerId === entry.playerId && sameGame.has(p.raceId));
+        return {runs: runs.length, wins: runs.filter(p => winners.has(p.id)).length};
+    });
+};
+
+/**
+ * Opens the bets with a morning line, as at a racetrack: the house stakes money on each entry
+ * from a random draw shifted by its record, so every racer starts with odds. The pool left by
+ * earlier races is spread over the entries the same way, as a stake on its racer.
+ */
 const openBetting = async (game: Game, race: Race) => {
     const entries = await getEntries(race.id);
     if (entries.length < MIN_ENTRIES) throw new GameError(`Il faut au moins ${MIN_ENTRIES} coureurs`);
+    const playerCount = await Player.count({where: {gameId: game.id}});
+    const shares = morningLine(await recordsOf(game, entries));
+    const houseTotal = HOUSE_STAKE_PER_PLAYER * Math.max(playerCount, 1);
     const seeds = splitPool(game.pool, entries.length);
     await sequelize.transaction(async transaction => {
-        for (const [i, entry] of entries.entries()) await entry.update({seed: seeds[i]}, {transaction});
-        await game.update({status: 'betting', pool: 0, lockDeadline: null}, {transaction});
+        for (const [i, entry] of entries.entries()) {
+            await entry.update({seed: seeds[i], house: cents(houseTotal * shares[i])}, {transaction});
+        }
+        await game.update({
+            status: 'betting', pool: 0, lockDeadline: null,
+            houseMoney: cents(game.houseMoney + entries.reduce((sum, e) => sum + e.house, 0)),
+        }, {transaction});
     });
 };
 
@@ -281,8 +311,15 @@ export const declareWinner = async (rawEntryId: unknown) => {
     const players = await Player.findAll({where: {gameId: game.id}});
     const bets = await Bet.findAll({where: {raceId: race.id}});
     const ranksBefore = rankPlayers(players);
-    const seeds = entries.reduce((sum, e) => sum + e.seed, 0);
-    const {payouts, unclaimed} = computePayouts(bets, seeds, winner.id);
+    const isFinal = game.raceIndex === (await getRaces(game.id)).length - 1;
+    const {payouts, toPool, pot} = settleRace({
+        bets,
+        entries,
+        winnerEntryId: winner.id,
+        multiplier: isFinal ? FINAL_RACE_MULTIPLIER : 1,
+    });
+    // Whatever the settlement pays beyond the pot comes from the house
+    const created = [...payouts.values()].reduce((a, b) => a + b, 0) + toPool - pot;
 
     await sequelize.transaction(async transaction => {
         for (const player of players) {
@@ -296,7 +333,11 @@ export const declareWinner = async (rawEntryId: unknown) => {
             }, {transaction});
         }
         await race.update({winnerEntryId: winner.id}, {transaction});
-        await game.update({status: 'results', pool: cents(game.pool + unclaimed)}, {transaction});
+        await game.update({
+            status: 'results',
+            pool: cents(game.pool + toPool),
+            houseMoney: cents(game.houseMoney + created),
+        }, {transaction});
     });
 };
 
@@ -338,9 +379,11 @@ const computeAwards = async (game: Game): Promise<Award[]> => {
 
     await sequelize.transaction(async transaction => {
         for (const award of awards) {
+            // The biggest borrower pays half a bonus instead of winning one
+            award.bonus = award.key === 'debtor' ? -cents(game.awardBonus / 2) : game.awardBonus;
             for (const playerId of award.playerIds) {
                 const player = players.find(p => p.id === playerId)!;
-                player.bonus = cents(player.bonus + game.awardBonus);
+                player.bonus = cents(player.bonus + award.bonus);
             }
         }
         for (const player of players) if (player.changed('bonus')) await player.save({transaction});
@@ -364,11 +407,11 @@ export const resetGame = async (gameId?: number) => {
             await Bet.destroy({where: {raceId: {[Op.in]: raceIds}}, transaction});
             const playerRaceIds = races.filter(r => r.type === 'players').map(r => r.id);
             if (playerRaceIds.length) await RaceEntry.destroy({where: {raceId: {[Op.in]: playerRaceIds}}, transaction});
-            await RaceEntry.update({seed: 0}, {where: {raceId: {[Op.in]: raceIds}}, transaction});
+            await RaceEntry.update({seed: 0, house: 0}, {where: {raceId: {[Op.in]: raceIds}}, transaction});
             await Race.update({winnerEntryId: null}, {where: {gameId: game.id}, transaction});
         }
         await game.update({
-            status: 'lobby', raceIndex: -1, lockDeadline: null, pool: 0, awards: null, awardStep: 0, podiumStep: 0
+            status: 'lobby', raceIndex: -1, lockDeadline: null, pool: 0, awards: null, awardStep: 0, podiumStep: 0, houseMoney: 0
         }, {transaction});
     });
     if (game.active) clearDeadline();

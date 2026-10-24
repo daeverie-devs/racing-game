@@ -38,11 +38,17 @@ frontend/   Angular 20: the phone screen (/) and the big screen with the admin c
   Group races into games and choose which game is active.
 - Players scan the QR code, build their character and join. A locked or reloaded phone goes straight
   back into the game.
-- Each race: players pick a racer and an amount on their phone and lock in. Bets are revealed when
-  everyone is locked, or when the admin's countdown runs out (unlocked picks are locked as they are,
-  no pick = pass). The admin confirms the winner, payouts are split among the winning bets, and a
-  pot nobody won is spread over the next race's racers.
-- Under 100 $, a player can borrow up to 1000 $ at a time; loans come off the final score.
+- Each race opens with a morning line, as at a racetrack: the house stakes 150 $ per player, split
+  by a random draw around each racer's record, so every racer shows starting odds (2.6× to 31×).
+- Players pick a racer and an amount on their phone (at least 5 % of their balance) and lock in.
+  Bets are revealed when everyone is locked, or when the admin's countdown runs out (unlocked picks
+  are locked as they are, raised to the minimum; no pick = pass).
+- The admin confirms the winner. Pari-mutuel payout: the whole pot is shared among the stakes on the
+  winner, house included; a winning bet returns between 1.05× and 10× its stake. The house's share
+  and anything over the cap go to the pool, which sits on the next race's racers. The last race
+  pays double.
+- Under 100 $, a player can borrow up to 1000 $ at a time; loans come off the final score, and the
+  biggest borrower's award costs half an award bonus.
 
 ## Game flow
 

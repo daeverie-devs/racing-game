@@ -17,6 +17,8 @@ export interface Award {
     description: string;
     value: number;
     playerIds: number[];
+    /** What each winner got: the award bonus, or a penalty (loan award) */
+    bonus?: number;
 }
 
 export interface GameInfo {
@@ -36,6 +38,13 @@ export interface GameInfo {
     awardCount: number;
     loanThreshold: number;
     loanMax: number;
+    /** Betting limits, like a racetrack: minimum bet share, max and min return per stake */
+    minBetShare: number;
+    payoutCap: number;
+    minReturn: number;
+    isFinalRace: boolean;
+    finalMultiplier: number;
+    houseMoney: number;
 }
 
 export interface PlayerInfo {
@@ -67,6 +76,8 @@ export interface Entry {
     playerId: number | null;
     skin: Skin | null;
     seed: number;
+    /** Morning line: odds from the house and pool money alone, shown from the start */
+    startOdds: number | null;
     total: number | null;
     odds: number | null;
     bettors: Bettor[];
@@ -94,7 +105,7 @@ export interface GameState {
     game: GameInfo;
     players: PlayerInfo[];
     race: RaceInfo | null;
-    me: {playerId: number, bet: MyBet | null} | null;
+    me: {playerId: number, minBet: number, bet: MyBet | null} | null;
     admin: {presetWinnerEntryId: number | null, gameId: number} | null;
 }
 

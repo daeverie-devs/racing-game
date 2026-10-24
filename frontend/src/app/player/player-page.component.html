@@ -84,7 +84,7 @@
                                 <div>
                                     <span class="rg-eyebrow">Ta mise</span>
                                     <p><strong class="rg-money">{{ bet()!.amount | money }}</strong> sur <strong>{{ entry.name }}</strong></p>
-                                    <p class="rg-muted small">Cote {{ entry.odds | odds }} · gain possible {{ (entry.odds ?? 0) * bet()!.amount | money }}</p>
+                                    <p class="rg-muted small">Cote {{ entry.odds | odds }} · gain possible {{ possibleWin() | money }}</p>
                                 </div>
                             </div>
                         } @else {

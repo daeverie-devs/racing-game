@@ -32,7 +32,9 @@ const ICONS: Record<string, string> = {
                     </div>
                 }
             </div>
-            <span class="bonus rg-chip rg-chip--money">+{{ bonusText() }} {{ winners().length > 1 ? 'chacun' : '' }}</span>
+            <span class="bonus rg-chip" [class.rg-chip--money]="amount() >= 0" [class.rg-chip--loss]="amount() < 0">
+                {{ bonusText() }} {{ winners().length > 1 ? 'chacun' : '' }}{{ amount() < 0 ? ' (la honte)' : '' }}
+            </span>
         </article>
     `,
     styles: `
@@ -117,5 +119,7 @@ export class AwardCardComponent {
         if (key === 'athlete') return `${value} course${value > 1 ? 's' : ''}`;
         return formatMoney(value);
     });
-    readonly bonusText = computed(() => formatMoney(this.bonus()));
+    /** The award's own bonus (a penalty for the loan award), else the game's */
+    readonly amount = computed(() => this.award().bonus ?? this.bonus());
+    readonly bonusText = computed(() => formatMoney(this.amount(), true));
 }
