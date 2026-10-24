@@ -1,4 +1,4 @@
-import {Skin} from '../models';
+import {Award, Skin} from '../models';
 
 // Must match frontend/src/app/avatar/skin.ts
 export const SKIN_OPTIONS = {shape: 6, modifier: 6, eyes: 6, main: 12, secondary: 12} as const;
@@ -63,6 +63,56 @@ export const computePayouts = (
     }
     // Nobody backed the winner: the pot goes to the pool for the next race
     return {payouts, unclaimed: winningStake > 0 ? 0 : pot};
+};
+
+export const AWARD_DEFS: {key: string, title: string, description: string}[] = [
+    {key: 'biggestBet', title: 'Le gros joueur', description: 'La plus grosse mise de la soirée'},
+    {key: 'bestShot', title: 'Le coup de génie', description: 'Le plus gros gain sur une seule mise'},
+    {key: 'chatterbox', title: 'Le moulin à paroles', description: 'Le plus de messages dans le chat'},
+    {key: 'athlete', title: 'L\'athlète', description: 'Le plus de courses courues'},
+    {key: 'debtor', title: 'Le banquier préféré', description: 'Le plus gros prêt'},
+    {key: 'cheapskate', title: 'Le gratteux', description: 'La plus petite mise (pas zéro)'},
+];
+
+/**
+ * Finds each award's winners from the game's history (ties all win). Pure, so the server and the
+ * balance simulation (scripts/balance.ts) share it.
+ */
+export const pickAwards = (input: {
+    players: {id: number, loans: number}[];
+    /** Bets with an amount above 0 */
+    bets: {playerId: number, amount: number, payout: number | null}[];
+    messageCounts: {playerId: number, count: number}[];
+    /** One player id per player-race run */
+    runs: number[];
+}): Award[] => {
+    const {players, bets, messageCounts, runs} = input;
+    const perPlayer = (pick: (playerId: number) => number | undefined) =>
+        new Map(players.map(p => [p.id, pick(p.id)] as const));
+    const betsOf = (playerId: number) => bets.filter(b => b.playerId === playerId);
+    const maxOf = (values: number[]) => values.length ? Math.max(...values) : undefined;
+    // One value per player (undefined = not eligible); the best is the highest unless noted
+    const values: Record<string, {byPlayer: Map<number, number | undefined>, lowest?: boolean}> = {
+        biggestBet: {byPlayer: perPlayer(id => maxOf(betsOf(id).map(b => b.amount)))},
+        bestShot: {byPlayer: perPlayer(id => maxOf(betsOf(id).map(b => (b.payout ?? 0) - b.amount).filter(v => v > 0)))},
+        chatterbox: {byPlayer: perPlayer(id => messageCounts.find(m => m.playerId === id)?.count || undefined)},
+        athlete: {byPlayer: perPlayer(id => runs.filter(r => r === id).length || undefined)},
+        debtor: {byPlayer: perPlayer(id => players.find(p => p.id === id)!.loans || undefined)},
+        cheapskate: {byPlayer: perPlayer(id => {
+            const amounts = betsOf(id).map(b => b.amount);
+            return amounts.length ? Math.min(...amounts) : undefined;
+        }), lowest: true},
+    };
+
+    const awards: Award[] = [];
+    for (const def of AWARD_DEFS) {
+        const {byPlayer, lowest} = values[def.key];
+        const eligible = [...byPlayer.entries()].filter((e): e is [number, number] => e[1] !== undefined);
+        if (!eligible.length) continue;
+        const best = lowest ? Math.min(...eligible.map(e => e[1])) : Math.max(...eligible.map(e => e[1]));
+        awards.push({...def, value: Math.round(best * 100) / 100, playerIds: eligible.filter(e => e[1] === best).map(e => e[0])});
+    }
+    return awards;
 };
 
 /** Splits the pool at random over the entries, so the next race's odds get shaken up */

@@ -10,7 +10,8 @@
     "start:prod": "node dist/server.js",
     "reset-db": "ts-node-dev --transpile-only src/reset-db.ts",
     "db:rebuild": "ts-node-dev --transpile-only src/reset-db.ts --rebuild",
-    "simulate": "node scripts/simulate.js"
+    "simulate": "node scripts/simulate.js",
+    "balance": "ts-node --transpile-only scripts/balance.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.1",

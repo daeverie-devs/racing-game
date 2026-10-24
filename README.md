@@ -57,6 +57,8 @@ and the math, `state.ts` for what each screen receives). Every action runs one a
 
 - `npm run simulate`: plays a whole game against the running backend with 20 fake phones and checks
   the rules (money conserved, lock-in, pool, loans, awards, podium), then removes its test data.
+- `npm run balance -- 3000`: simulates thousands of games of 8 to 12 players with the real payout
+  and award rules and prints, per rule variant, how often each betting style wins (no server needed).
 - `npm run reset-db`: puts the active game back in the lobby (players, bets and chat removed, races
   kept). Same as the restart button in the admin bar.
 - `npm run db:rebuild`: drops every table and recreates them empty.

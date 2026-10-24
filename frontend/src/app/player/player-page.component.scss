@@ -178,6 +178,71 @@
     text-align: center;
 }
 
+.pool {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.75rem;
+}
+
+.pool-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.15rem;
+}
+
+.pool-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--rg-radius-inner);
+
+    &.won { background: var(--rg-gain-soft); }
+    &.mine { border-color: var(--rg-accent); }
+
+    .small {
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+.pool-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.trophy {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    color: var(--rg-gold);
+}
+
+.tiny {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+}
+
+.pool-odds {
+    width: 3.2rem;
+    font-weight: 800;
+    color: var(--rg-accent);
+    text-align: right;
+}
+
+.pool-total {
+    min-width: 4.8rem;
+    text-align: right;
+}
+
 .delta {
     &.won { border-color: var(--rg-gain); .big { color: var(--rg-gain); } }
     &.lost { border-color: var(--rg-loss); .big { color: var(--rg-loss); } }

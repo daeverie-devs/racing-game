@@ -15,7 +15,7 @@
     </section>
 }
 
-@if (status() === 'watching' && !collapsed()) {
+@if (status() === 'watching' && !collapsed() && (!hasPreset() || picking())) {
     <section class="panel rg-card rg-enter">
         <span class="rg-eyebrow">Qui a gagné?</span>
         <div class="runners">
@@ -68,9 +68,15 @@
                     </button>
                 }
                 @case ('watching') {
+                    <!-- The winner set in the editor stays secret: the button doesn't name it -->
                     <button class="rg-btn rg-btn--money" [disabled]="busy() || !winnerId()" (click)="run('race.winner', {entryId: winnerId()})">
-                        <mat-icon>emoji_events</mat-icon> Confirmer le gagnant
+                        <mat-icon>emoji_events</mat-icon> {{ hasPreset() && !picking() ? 'Révéler le gagnant' : 'Confirmer le gagnant' }}
                     </button>
+                    @if (hasPreset() && !picking()) {
+                        <button class="rg-btn rg-btn--ghost" (click)="picking.set(true)" title="Choisir un autre gagnant que celui de l'éditeur">
+                            Changer
+                        </button>
+                    }
                 }
                 @case ('results') {
                     <button class="rg-btn" [disabled]="busy()" (click)="run('game.next')">

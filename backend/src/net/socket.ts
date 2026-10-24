@@ -69,7 +69,11 @@ const handlers: Record<string, Handler> = {
     'bet.lock': {access: 'player', run: (_c, data, p) => engine.lockBet(p!, data ?? {})},
     'bet.unlock': {access: 'player', run: (_c, _d, p) => engine.unlockBet(p!)},
     'bet.pass': {access: 'player', run: (_c, _d, p) => engine.passBet(p!)},
-    'loan.take': {access: 'player', run: (_c, data, p) => engine.takeLoan(p!, data?.amount)},
+    'loan.take': {access: 'player', run: async (_c, data, p) => {
+        const amount = await engine.takeLoan(p!, data?.amount);
+        // The big screen puts the borrower to shame
+        send('loan', {playerId: p!.id, name: p!.name, skin: p!.skin, amount, total: p!.loans});
+    }},
     'chat.send': {access: 'player', broadcast: false, run: async (_c, data, p) => {
         const message = await engine.sendMessage(p!, data?.text);
         if (message) send('chat', messageDto(message, p!));
@@ -168,6 +172,8 @@ const dispatch = async (conn: Connection, raw: WebSocket.RawData) => {
     } catch {
         return;
     }
+    // Answered right away, outside the queue: a waking phone uses it to check its socket is alive
+    if (message?.type === 'ping') return reply(conn, message.reqId, {ok: true});
     const handler = handlers[message?.type];
     if (!handler) return reply(conn, message?.reqId, {ok: false, error: 'Action inconnue'});
 

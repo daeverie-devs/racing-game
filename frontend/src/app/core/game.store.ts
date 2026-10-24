@@ -6,6 +6,15 @@ const TOKEN_KEY = 'rg.token';
 const PROFILE_KEY = 'rg.profile';
 const PASSCODE_KEY = 'rg.admin';
 
+export interface LoanEvent {
+    playerId: number;
+    name: string;
+    skin: Skin;
+    amount: number;
+    total: number;
+    at: number;
+}
+
 export interface Profile {
     name: string;
     skin: Skin;
@@ -40,6 +49,8 @@ export class GameStore {
     readonly state = signal<GameState | null>(null);
     readonly chat = signal<ChatMessage[]>([]);
     readonly newMessage = signal<ChatMessage | null>(null);
+    /** The last loan taken, for the big screen to put the borrower to shame */
+    readonly lastLoan = signal<LoanEvent | null>(null);
     /** True once the server answered hello on this connection */
     readonly ready = signal(false);
     readonly isAdmin = signal(false);
@@ -68,6 +79,11 @@ export class GameStore {
             } else if (type === 'chat') {
                 this.chat.update(list => [...list.slice(-99), data]);
                 this.newMessage.set(data);
+            } else if (type === 'loan') {
+                this.lastLoan.set({...data, at: Date.now()});
+                if (data.playerId !== this.state()?.me?.playerId && !this.isAdmin()) {
+                    this.showToast(`${data.name} vient d'emprunter ${data.amount} $. Quelle honte.`);
+                }
             }
         });
         this.socket.connect();
@@ -122,6 +138,17 @@ export class GameStore {
         } catch (err) {
             this.showToast((err as Error).message);
             return undefined;
+        }
+    }
+
+    /** Like act(), for actions that answer nothing: true when it worked (an error shows as a toast) */
+    async tryAct(type: string, data?: unknown): Promise<boolean> {
+        try {
+            await this.socket.request(type, data);
+            return true;
+        } catch (err) {
+            this.showToast((err as Error).message);
+            return false;
         }
     }
 

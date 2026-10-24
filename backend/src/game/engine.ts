@@ -5,7 +5,7 @@ import {Award, Bet, cents, Game, Message, Player, Race, RaceEntry, Skin} from '.
 import {sequelize} from '../sequelize';
 import {
     CHAT_COOLDOWN_MS, CHAT_MAX, computePayouts, GameError, LOAN_MAX, LOAN_THRESHOLD, MIN_ENTRIES,
-    parseAmount, parseName, parseSkin, rankPlayers, splitPool
+    parseAmount, parseName, parseSkin, pickAwards, rankPlayers, splitPool
 } from './rules';
 import {runExclusive} from './queue';
 
@@ -78,6 +78,7 @@ export const takeLoan = async (player: Player, rawAmount: unknown) => {
     if (player.balance >= LOAN_THRESHOLD) throw new GameError(`Prêt possible sous ${LOAN_THRESHOLD}$ seulement`);
     if (amount < 1 || amount > LOAN_MAX) throw new GameError(`Entre 1$ et ${LOAN_MAX}$`);
     await player.update({balance: cents(player.balance + amount), loans: cents(player.loans + amount)});
+    return amount;
 };
 
 // ---------- Chat ----------
@@ -315,15 +316,6 @@ export const nextPodiumStep = async () => {
 
 // ---------- Awards ----------
 
-const AWARD_DEFS: {key: string, title: string, description: string}[] = [
-    {key: 'biggestBet', title: 'Le gros joueur', description: 'La plus grosse mise de la soirée'},
-    {key: 'bestShot', title: 'Le coup de génie', description: 'Le plus gros gain sur une seule mise'},
-    {key: 'chatterbox', title: 'Le moulin à paroles', description: 'Le plus de messages dans le chat'},
-    {key: 'athlete', title: 'L\'athlète', description: 'Le plus de courses courues'},
-    {key: 'debtor', title: 'Le banquier préféré', description: 'Le plus gros prêt'},
-    {key: 'cheapskate', title: 'Le gratteux', description: 'La plus petite mise (pas zéro)'},
-];
-
 /** Finds each award's winners (ties all win) and pays their bonus, once */
 const computeAwards = async (game: Game): Promise<Award[]> => {
     const raceIds = (await getRaces(game.id)).map(r => r.id);
@@ -337,31 +329,12 @@ const computeAwards = async (game: Game): Promise<Award[]> => {
     }) as unknown as {playerId: number, count: number}[];
     const runs = raceIds.length ? await RaceEntry.findAll({where: {raceId: {[Op.in]: raceIds}, playerId: {[Op.ne]: null}}}) : [];
 
-    // Each award: one value per player (undefined = not eligible), best = highest unless noted
-    const perPlayer = (pick: (playerId: number) => number | undefined) =>
-        new Map(players.map(p => [p.id, pick(p.id)] as const));
-    const betsOf = (playerId: number) => bets.filter(b => b.playerId === playerId);
-    const maxOf = (values: number[]) => values.length ? Math.max(...values) : undefined;
-    const values: Record<string, {byPlayer: Map<number, number | undefined>, lowest?: boolean}> = {
-        biggestBet: {byPlayer: perPlayer(id => maxOf(betsOf(id).map(b => b.amount)))},
-        bestShot: {byPlayer: perPlayer(id => maxOf(betsOf(id).map(b => (b.payout ?? 0) - b.amount).filter(v => v > 0)))},
-        chatterbox: {byPlayer: perPlayer(id => Number(messageCounts.find(m => m.playerId === id)?.count) || undefined)},
-        athlete: {byPlayer: perPlayer(id => runs.filter(r => r.playerId === id).length || undefined)},
-        debtor: {byPlayer: perPlayer(id => players.find(p => p.id === id)!.loans || undefined)},
-        cheapskate: {byPlayer: perPlayer(id => {
-            const amounts = betsOf(id).map(b => b.amount);
-            return amounts.length ? Math.min(...amounts) : undefined;
-        }), lowest: true},
-    };
-
-    const awards: Award[] = [];
-    for (const def of AWARD_DEFS) {
-        const {byPlayer, lowest} = values[def.key];
-        const eligible = [...byPlayer.entries()].filter((e): e is [number, number] => e[1] !== undefined);
-        if (!eligible.length) continue;
-        const best = lowest ? Math.min(...eligible.map(e => e[1])) : Math.max(...eligible.map(e => e[1]));
-        awards.push({...def, value: cents(best), playerIds: eligible.filter(e => e[1] === best).map(e => e[0])});
-    }
+    const awards = pickAwards({
+        players,
+        bets,
+        messageCounts: messageCounts.map(m => ({playerId: m.playerId, count: Number(m.count)})),
+        runs: runs.map(r => r.playerId!),
+    });
 
     await sequelize.transaction(async transaction => {
         for (const award of awards) {

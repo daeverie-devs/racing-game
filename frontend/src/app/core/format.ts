@@ -39,7 +39,10 @@ export class OrdinalPipe implements PipeTransform {
     }
 }
 
-/** Embed URL for a YouTube link: watch?v=, youtu.be/, shorts/, with t=90, t=1m30s or start= */
+/**
+ * Embed URL for a YouTube link: watch?v=, youtu.be/, shorts/, with t=90, t=1m30s or start=.
+ * No autoplay: the admin starts it, so the volume is set before the room hears it.
+ */
 export const youtubeEmbed = (link: string | null | undefined) => {
     if (!link) return null;
     let url: URL;
@@ -55,5 +58,5 @@ export const youtubeEmbed = (link: string | null | undefined) => {
     const t = url.searchParams.get('t') ?? url.searchParams.get('start') ?? '';
     const parts = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/.exec(t);
     const start = parts ? (Number(parts[1] ?? 0) * 3600 + Number(parts[2] ?? 0) * 60 + Number(parts[3] ?? 0)) : 0;
-    return `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0${start ? `&start=${start}` : ''}`;
+    return `https://www.youtube.com/embed/${encodeURIComponent(id)}?rel=0&playsinline=1${start ? `&start=${start}` : ''}`;
 };

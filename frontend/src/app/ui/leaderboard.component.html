@@ -21,7 +21,12 @@
                 }
             </span>
             <rg-avatar [skin]="row.player.skin" [size]="large() ? '48px' : '36px'" [dimmed]="!row.player.connected" />
-            <span class="name">{{ row.hidden ? '???' : row.player.name }}</span>
+            <span class="who">
+                <span class="name">{{ row.hidden ? '???' : row.player.name }}</span>
+                @if (!row.hidden && row.player.loans > 0) {
+                    <span class="debt" [title]="'A emprunté ' + (row.player.loans | money)">endetté {{ row.player.loans | money }}</span>
+                }
+            </span>
             <span class="money">
                 <span class="score rg-money">{{ row.hidden ? '' : (row.player.score | money) }}</span>
                 @if (showDelta() && !row.hidden && row.player.lastDelta) {

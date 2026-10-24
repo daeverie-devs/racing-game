@@ -23,8 +23,10 @@
             }
         </div>
         <form class="composer" (ngSubmit)="send()">
-            <input class="rg-field" name="text" [(ngModel)]="text" maxlength="280" placeholder="Ton message" autocomplete="off" />
-            <button class="rg-icon-btn send" type="submit" [disabled]="!text.trim() || sending()" aria-label="Envoyer">
+            <input #input class="rg-field" name="text" [ngModel]="text()" (ngModelChange)="text.set($event)" maxlength="280"
+                   placeholder="Ton message" autocomplete="off" enterkeyhint="send" />
+            <button class="rg-icon-btn send" type="submit" [disabled]="!text().trim() || sending()" aria-label="Envoyer"
+                    (mousedown)="$event.preventDefault()">
                 <mat-icon>send</mat-icon>
             </button>
         </form>

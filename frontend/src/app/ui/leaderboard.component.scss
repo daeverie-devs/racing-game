@@ -65,8 +65,29 @@
     color: var(--rg-text-muted);
 }
 
-.name {
+.who {
+    display: flex;
     flex: 1;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+// Borrowers wear it on every ranking
+.debt {
+    flex: none;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: var(--rg-loss-soft);
+    color: var(--rg-loss);
+    font-size: 0.68em;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.name {
     min-width: 0;
     overflow: hidden;
     font-weight: 700;

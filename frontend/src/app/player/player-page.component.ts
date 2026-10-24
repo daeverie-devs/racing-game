@@ -35,6 +35,7 @@ export class PlayerPageComponent {
 
     readonly myEntry = computed(() => this.race()?.entries.find(e => e.id === this.bet()?.entryId) ?? null);
     readonly winner = computed(() => this.race()?.entries.find(e => e.id === this.race()?.winnerEntryId) ?? null);
+    readonly entriesByTotal = computed(() => [...this.race()?.entries ?? []].sort((a, b) => (b.total ?? 0) - (a.total ?? 0)));
     readonly currentAward = computed(() => {
         const awards = this.game()?.awards ?? [];
         return awards[awards.length - 1] ?? null;
@@ -53,8 +54,7 @@ export class PlayerPageComponent {
     readonly running = computed(() => !!this.race()?.entries.some(e => e.playerId === this.me()?.id));
 
     async borrow(amount: number) {
-        const done = await this.store.act('loan.take', {amount});
-        if (done !== undefined) {
+        if (await this.store.tryAct('loan.take', {amount})) {
             this.loanOpen.set(false);
             this.store.showToast(`+${amount} $ empruntés. Ça sera déduit à la fin!`);
         }

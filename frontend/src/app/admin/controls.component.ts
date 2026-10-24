@@ -31,6 +31,8 @@ export class ControlsComponent {
     busy = signal(false);
     lineup = signal<number[]>([]);
     winnerId = signal<number | null>(null);
+    /** The admin chose to override the winner set in the editor */
+    picking = signal(false);
 
     readonly game = this.store.game;
     readonly race = this.store.race;
@@ -38,6 +40,7 @@ export class ControlsComponent {
     readonly statusLabel = computed(() => STATUS_LABELS[this.status()] ?? this.status());
     readonly isLastRace = computed(() => (this.game()?.raceIndex ?? 0) + 1 >= (this.game()?.raceCount ?? 0));
     readonly lockedCount = computed(() => this.store.players().filter(p => p.locked).length);
+    readonly hasPreset = computed(() => !!this.store.state()?.admin?.presetWinnerEntryId);
 
     constructor() {
         // Preselect the winner set in the editor when the race is revealed
@@ -45,7 +48,10 @@ export class ControlsComponent {
             const preset = this.store.state()?.admin?.presetWinnerEntryId ?? null;
             const raceId = this.race()?.id;
             void raceId;
-            untracked(() => this.winnerId.set(preset));
+            untracked(() => {
+                this.winnerId.set(preset);
+                this.picking.set(false);
+            });
         });
         // A new lineup step starts empty
         effect(() => {

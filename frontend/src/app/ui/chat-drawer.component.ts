@@ -17,9 +17,10 @@ export class ChatDrawerComponent {
     store = inject(GameStore);
     open = signal(false);
     unread = signal(0);
-    text = '';
+    text = signal('');
     sending = signal(false);
     private list = viewChild<ElementRef<HTMLElement>>('list');
+    private input = viewChild<ElementRef<HTMLInputElement>>('input');
 
     constructor() {
         // Only messages that arrive after the drawer was created count as unread
@@ -43,12 +44,16 @@ export class ChatDrawerComponent {
     }
 
     async send() {
-        const text = this.text.trim();
+        const text = this.text().trim();
         if (!text || this.sending()) return;
+        // Cleared right away so the next message can be typed; put back if sending failed
+        this.text.set('');
+        this.input()?.nativeElement.focus();
         this.sending.set(true);
-        const sent = await this.store.act('chat.send', {text});
+        const sent = await this.store.tryAct('chat.send', {text});
         this.sending.set(false);
-        if (sent !== undefined) this.text = '';
+        if (!sent && !this.text()) this.text.set(text);
+        this.input()?.nativeElement.focus();
     }
 
     /** Follows new messages only when already at the bottom, so reading history isn't interrupted */

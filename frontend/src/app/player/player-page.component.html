@@ -101,6 +101,24 @@
                                 <h2 class="rg-title">{{ entry.name }}</h2>
                             </div>
                         }
+                        <div class="pool rg-card">
+                            <div class="pool-head">
+                                <span class="rg-eyebrow">Mises par coureur</span>
+                                <span class="rg-money small">{{ race()?.pot | money }}</span>
+                            </div>
+                            @for (entry of entriesByTotal(); track entry.id) {
+                                <div class="pool-row" [class.won]="entry.id === race()?.winnerEntryId" [class.mine]="entry.id === bet()?.entryId">
+                                    <rg-entry-visual [entry]="entry" size="32px" />
+                                    <span class="pool-name">{{ entry.name }}</span>
+                                    @if (entry.id === race()?.winnerEntryId) {
+                                        <mat-icon class="trophy">emoji_events</mat-icon>
+                                    }
+                                    <span class="rg-muted small">{{ entry.bettors.length }} <mat-icon class="tiny">person</mat-icon></span>
+                                    <span class="pool-odds">{{ entry.odds | odds }}</span>
+                                    <span class="rg-money pool-total">{{ entry.total | money }}</span>
+                                </div>
+                            }
+                        </div>
                         @if (me()!.lastDelta !== null) {
                             <div class="delta rg-card rg-enter-pop" [class.won]="me()!.lastDelta! > 0" [class.lost]="me()!.lastDelta! < 0">
                                 @if (me()!.lastDelta! > 0) {

@@ -14,6 +14,7 @@ import {CountdownComponent} from '../ui/countdown.component';
 import {EntryVisualComponent} from '../ui/entry-visual.component';
 import {LeaderboardComponent} from '../ui/leaderboard.component';
 import {PodiumComponent} from '../ui/podium.component';
+import {ShamePopupComponent} from '../ui/shame-popup.component';
 
 /** The big screen: what the room watches. Controls live in the admin bar on top of it */
 @Component({
@@ -21,7 +22,7 @@ import {PodiumComponent} from '../ui/podium.component';
     standalone: true,
     imports: [
         MatIcon, QRCodeComponent, AvatarComponent, MoneyPipe, OddsPipe, AwardCardComponent, ChatBubblesComponent,
-        CountdownComponent, EntryVisualComponent, LeaderboardComponent, PodiumComponent,
+        CountdownComponent, EntryVisualComponent, LeaderboardComponent, PodiumComponent, ShamePopupComponent,
     ],
     templateUrl: 'screen.component.html',
     styleUrl: 'screen.component.scss',
@@ -40,8 +41,13 @@ export class ScreenComponent {
     readonly players = this.store.players;
     readonly status = computed(() => this.game()?.status ?? 'lobby');
     readonly readyCount = computed(() => this.players().filter(p => p.locked).length);
+    /**
+     * Keyed on the link text: the race object is replaced on every server update (a chat message,
+     * a player connecting), and a new URL object would reload the video each time
+     */
+    readonly videoLink = computed(() => this.race()?.link ?? null);
     readonly video = computed(() => {
-        const url = youtubeEmbed(this.race()?.link);
+        const url = youtubeEmbed(this.videoLink());
         return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
     });
     readonly winner = computed(() => this.race()?.entries.find(e => e.id === this.race()?.winnerEntryId) ?? null);
@@ -49,6 +55,7 @@ export class ScreenComponent {
         const awards = this.game()?.awards ?? [];
         return awards[awards.length - 1] ?? null;
     });
+    readonly debtors = computed(() => this.players().filter(p => p.loans > 0).sort((a, b) => b.loans - a.loans));
     /** Biggest entry total, so the bars share one scale */
     readonly maxTotal = computed(() => Math.max(1, ...(this.race()?.entries ?? []).map(e => e.total ?? 0)));
 

@@ -85,7 +85,12 @@
             <section class="watching">
                 <div class="video rg-card">
                     @if (video(); as src) {
-                        <iframe [src]="src" title="Course" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+                        <iframe [src]="src" title="Course" allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        <!-- Some videos refuse to play embedded: open them on YouTube instead -->
+                        <a class="youtube-link" [href]="videoLink()" target="_blank" rel="noopener">
+                            <mat-icon>open_in_new</mat-icon> Ouvrir sur YouTube
+                        </a>
                     } @else {
                         <div class="no-video">
                             <mat-icon>sports_score</mat-icon>
@@ -150,6 +155,18 @@
                 <div class="board">
                     <span class="rg-eyebrow">Classement</span>
                     <rg-leaderboard [players]="players()" [animate]="true" [showDelta]="true" [large]="true" [columnCount]="players().length > 8 ? 2 : 1" />
+                    @if (debtors().length) {
+                        <div class="wall rg-card rg-enter" style="animation-delay: 1.6s">
+                            <span class="wall-title">Mur de la honte</span>
+                            @for (player of debtors(); track player.id) {
+                                <div class="debtor">
+                                    <rg-avatar [skin]="player.skin" size="36px" />
+                                    <span class="debtor-name">{{ player.name }}</span>
+                                    <span class="debtor-amount">doit {{ player.loans | money }} à la banque de papa</span>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </section>
         }
@@ -175,3 +192,4 @@
 </div>
 
 <rg-chat-bubbles />
+<rg-shame-popup />
